@@ -1,8 +1,0 @@
-#include "frame.h"
-
-Frame::Frame(std::vector<vec3> pts, std::vector<std::vector<Line> > lines, int elapsed)
-{
-    Points = pts;
-    Lines = lines;
-    ElapsedTime = elapsed;
-}
