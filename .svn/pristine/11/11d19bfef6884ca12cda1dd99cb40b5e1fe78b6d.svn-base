@@ -1,0 +1,46 @@
+#ifndef STRUCTUREEDITOR_H
+#define STRUCTUREEDITOR_H
+
+#include <QDialog>
+
+#include "modelstructure.h"
+
+namespace Ui {
+class StructureEditor;
+}
+
+class StructureEditor : public QDialog
+{
+    Q_OBJECT
+
+    QTreeWidgetItem* CurrentItem;
+    int CurrentItemColumn;
+    size_t CurrentItemChildCount;
+
+    ModelStructure* Structure;
+public:
+    ModelStructure* getStructure() const {return Structure;}
+    explicit StructureEditor(QWidget *parent = 0);
+    ~StructureEditor();
+
+private slots:
+    void on_Add_clicked();
+
+    void on_AddChild_clicked();
+
+    void on_Remove_clicked();
+
+    void on_Up_clicked();
+
+    void on_Down_clicked();
+
+    void on_buttonBox_accepted();
+
+    void on_Editor_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
+
+private:
+    void BuildStructure();
+    Ui::StructureEditor *ui;
+};
+
+#endif // STRUCTUREEDITOR_H

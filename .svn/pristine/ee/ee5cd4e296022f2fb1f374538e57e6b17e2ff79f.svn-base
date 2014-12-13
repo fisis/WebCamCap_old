@@ -1,0 +1,280 @@
+#include "openglwindow.h"
+#include <iostream>
+#include <GL/glu.h>
+#include <GL/glut.h>
+
+#include <QDir>
+
+OpenGLWindow::OpenGLWindow(QWidget *parent) : QGLWidget(parent)
+{
+    Zoom = 1.0f;
+    DrawJoints = true;
+    DrawLines = true;
+    DrawBones = true;
+    RoomDims = vec3(100.0f, 100.0f, 100.0f);
+    CamRot = vec3(0.0f, 0.0f, 0.0f);
+
+    //mouse
+    CurrentMousePos = LastMousePos = vec2(0.0f, 0.0f);
+    LeftButton = false;
+
+    //QImage temp(QDir::currentPath() + "/Pictures/checkboard_texture.jpg");
+
+    //texture = QGLWidget::convertToGLFormat(temp);
+}
+
+void OpenGLWindow::initializeGL()
+{
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+
+    glShadeModel(GL_SMOOTH);
+    glRenderMode(GL_RENDER);
+
+    glPolygonMode(GL_FRONT, GL_FILL);
+    glPolygonMode(GL_BACK, GL_FILL);
+
+    glEnable(GL_POLYGON_SMOOTH);
+    glHint(GL_POLYGON_SMOOTH_HINT,GL_NICEST);
+
+/*
+    glEnable(GL_TEXTURE_2D);
+    glGenTextures(1, &texId);
+    glBindTexture(GL_TEXTURE_2D, texId);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, texture.width(), texture.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, texture.bits() );
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glDisable(GL_TEXTURE_2D);
+*/
+}
+
+void OpenGLWindow::paintGL()
+{
+    glClearColor(0.15f, 0.15f, 0.15f, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glLoadIdentity();
+
+    gluLookAt(
+                -RoomDims.x*Zoom, 200*Zoom, RoomDims.y*Zoom,
+                 RoomDims.x/2.0f, RoomDims.z/2.0f , -RoomDims.y/2.0f,
+                 0, 1, 0
+                    );
+
+    glTranslatef(RoomDims.x/2.0f, RoomDims.z/2.0f, -RoomDims.y/2.0f);
+    glRotatef(CamRot.x, 1, 0, 0);
+    glRotatef(CamRot.y, 0, 1, 0);
+    glTranslatef(-RoomDims.x/2.0f, -RoomDims.z/2.0f, RoomDims.y/2.0f);
+
+    if(DrawJoints)
+    {
+        drawJoints();
+    }
+
+    if(DrawLines)
+    {
+        drawLines();
+    }
+
+    if(DrawBones)
+    {
+        drawBones();
+    }
+
+    drawFloor();
+}
+
+void OpenGLWindow::resizeGL(int w, int h)
+{
+    glViewport(0, 0, w, h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(60, (float) w/ (float) h, 0.1, 10000);
+
+    glMatrixMode(GL_MODELVIEW);
+}
+
+void OpenGLWindow::setRoomDims(vec3 dims)
+{
+    RoomDims = dims;
+    updateGL();
+}
+
+void OpenGLWindow::setFrame(std::vector<std::vector<Line> > lns, std::vector<vec3> pts, std::vector<Line> bns)
+{
+    Joints = pts;
+    Lines = lns;
+    Bones = bns;
+
+    updateGL();
+}
+
+void OpenGLWindow::wheelEvent(QWheelEvent *event)
+{
+    int numDegrees = -event->delta() / 8;
+    int numSteps = numDegrees / 15;
+
+    Zoom += 0.1*numSteps;
+
+    if(Zoom < 0.5)
+    {
+        Zoom = 0.5;
+    }
+    else if(Zoom > 5.0)
+    {
+        Zoom = 5.0;
+    }
+
+    updateGL();
+    event->accept();
+}
+
+void OpenGLWindow::mousePressEvent(QMouseEvent *event)
+{
+    if(event->button() == Qt::LeftButton)
+    {
+        QCursor c = cursor();
+        c.setShape(Qt::DragMoveCursor);
+        setCursor(c);
+
+        LeftButton = true;
+        CurrentMousePos.x = event->x();
+        CurrentMousePos.y = event->y();
+    }
+
+    event->accept();
+}
+
+void OpenGLWindow::mouseReleaseEvent(QMouseEvent *event)
+{
+    if(event->button() == Qt::LeftButton)
+    {
+        QCursor c = cursor();
+        c.setShape(Qt::OpenHandCursor);
+        setCursor(c);
+
+        LeftButton = false;
+
+    }
+
+    event->accept();
+}
+
+void OpenGLWindow::mouseMoveEvent(QMouseEvent *event)
+{
+    if(LeftButton)
+    {
+        LastMousePos = CurrentMousePos;
+
+        CurrentMousePos.x = event->x();
+        CurrentMousePos.y = event->y();
+
+        CamRot.y += (CurrentMousePos.x - LastMousePos.x);
+        CamRot.z = CamRot.x += (CurrentMousePos.y - LastMousePos.y);
+
+        limitsCamRot();
+    }
+
+    updateGL();
+    event->accept();
+}
+
+void OpenGLWindow::limitsCamRot()
+{
+    if(CamRot.y >= 360.0f)
+    {
+        CamRot.y -= 360.0f;
+    }
+
+    if(CamRot.y <= 360.0f)
+    {
+        CamRot.y += 360.0f;
+    }
+
+    if(CamRot.x > 30.0f)
+    {
+        CamRot.x  = 30.0f;
+    }
+
+    if(CamRot.x < -30.0f)
+    {
+        CamRot.x  = -30.0f;
+    }
+}
+
+void OpenGLWindow::countView()
+{
+
+}
+
+void OpenGLWindow::drawLine(Line l)
+{
+    glBegin(GL_LINES);
+    glVertex3f(l.Position.x, l.Position.z, -l.Position.y);
+    glVertex3f(l.Position.x+2*l.DirectionVector.x, l.Position.z+2*l.DirectionVector.z, -1*(l.Position.y+2*l.DirectionVector.y));
+    glEnd();
+}
+
+void OpenGLWindow::drawLines()
+{
+    glColor3f(1.0f,0.5f,0.0f);
+
+    for(size_t i = 0; i < Lines.size(); i++)
+    {
+        for(size_t j = 0; j < Lines[i].size(); j++)
+        {
+            drawLine(Lines[i][j]);
+        }
+    }
+}
+
+void OpenGLWindow::drawJoints()
+{
+    glColor3f(1,1,1);
+
+    glPushMatrix();
+    for(size_t i = 0; i < Joints.size(); i++)
+    {
+        glTranslatef(Joints[i].x, Joints[i].z, -Joints[i].y);
+        glutSolidSphere(3, 8, 8);
+        glTranslatef(-Joints[i].x, -Joints[i].z, Joints[i].y);
+    }
+    glPopMatrix();
+}
+
+void OpenGLWindow::drawBones()
+{
+    for(size_t i = 0; i < Bones.size(); i++)
+    {
+        drawLine(Bones[i]);
+    }
+}
+
+void OpenGLWindow::drawFloor()
+{
+    glColor3f(0.2, 0.1, 0.7);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0,0); glVertex3d(0, -1, 0);
+    glTexCoord2f(1,0); glVertex3d(RoomDims.x, -1, 0);
+    glTexCoord2f(1,1); glVertex3d(RoomDims.x, -1, -RoomDims.y);
+    glTexCoord2f(0,1); glVertex3d(0, -1, -RoomDims.y);
+    glEnd();
+}
+
+void OpenGLWindow::DefaultView()
+{
+
+}
+
+
+void OpenGLWindow::loadTexture()
+{
+
+}

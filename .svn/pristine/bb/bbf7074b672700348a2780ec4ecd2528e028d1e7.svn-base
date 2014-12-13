@@ -1,0 +1,44 @@
+#ifndef ANIMATION_H
+#define ANIMATION_H
+
+#include "frame.h"
+
+#include "modelstructure.h"
+
+class Animation
+{
+    float RoomEpsilon;
+
+    float FrameRate;
+
+    ModelStructure* BaseStructure;
+
+    std::string Name;
+    std::vector<Frame> Frames;
+
+    std::vector<ModelStructure> StructuresInFrames; //output
+public:
+    Animation(float Epsilon, std::string name = "Animation_def" , ModelStructure *struc = NULL);
+
+    void AddFrame(Frame k);
+    void AddFrame(std::vector<vec3> pts, std::vector<std::vector<Line> > lines, int elapsed);
+    void Save(ExportFormat format, std::string file);
+    void PostProcess();
+
+    //getters
+    std::string getName() const {return Name;}
+    float getFrameRate() const {return FrameRate;}
+    int getLength() const {return  Frames.size();}
+
+    //setters
+    void setName(std::string name) {Name = name;}
+
+private:
+    void SaveBVH(std::ofstream &outputFile);
+
+    //postprocessing
+    void handleBadFrames(std::vector<size_t> Frames);
+    void findStructure();
+};
+
+#endif // ANIMATION_H

@@ -1,0 +1,14 @@
+#include "animplayer.h"
+#include "ui_animplayer.h"
+
+AnimPlayer::AnimPlayer(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::AnimPlayer)
+{
+    ui->setupUi(this);
+}
+
+AnimPlayer::~AnimPlayer()
+{
+    delete ui;
+}

@@ -1,0 +1,106 @@
+#include "line.h"
+
+Line::Line(vec3 pos, vec3 vec)
+{
+    Found = false;
+    Position = pos;
+    DirectionVector = vec;
+    Intersections = 0;
+}
+
+void Line::ClosestPointsOnTwoLines(Line l1, Line l2, vec3 &closestPointLine1, vec3 &closestPointLine2)
+{
+        float a = dot(l1.DirectionVector, l1.DirectionVector);
+        float b = dot(l1.DirectionVector, l2.DirectionVector);
+        float e = dot(l2.DirectionVector, l2.DirectionVector);
+
+        float d = a*e - b*b;
+
+        // if lines are not parallel
+        if(d != 0){
+            vec3 r = l1.Position - l2.Position;
+            float c = dot(l1.DirectionVector, r);
+            float f = dot(l2.DirectionVector, r);
+
+            float s = (b*f - c*e) / d;
+            float t = (a*f - c*b) / d;
+
+            closestPointLine1 = l1.Position + l1.DirectionVector * s;
+            closestPointLine2 = l2.Position + l2.DirectionVector * t;
+/*
+            std::cout  << l1.Position.x << " " << l1.Position.y << " " << l1.Position.z << std::endl
+                       << "vector:" << l1.DirectionVector.x << " " << l1.DirectionVector.y << " " << l1.DirectionVector.z << std::endl;
+
+            std::cout  << l2.Position.x << " " << l2.Position.y << " " << l2.Position.z << std::endl
+                       << "vector2:" << l2.DirectionVector.x << " " << l2.DirectionVector.y << " " << l2.DirectionVector.z << std::endl << std::endl;
+      */  }
+}
+
+vec3 Line::IntersectionLinePlane(Line L, Line Plane)
+{
+    float d = Plane.DirectionVector.x * -Plane.Position.x + Plane.DirectionVector.y * -Plane.Position.y  + Plane.DirectionVector.z * -Plane.Position.z;
+
+    float t =       -(Plane.DirectionVector.x * L.Position.x + Plane.DirectionVector.y * L.Position.y + Plane.DirectionVector.z * L.Position.z + d)/
+                       (Plane.DirectionVector.x * L.DirectionVector.x + Plane.DirectionVector.y * L.DirectionVector.y + Plane.DirectionVector.z * L.DirectionVector.z);
+
+    return L.Position + t * L.DirectionVector;
+}
+
+float Line::DistanceTwoPoints(vec3 point1, vec3 point2)
+{
+    vec3 vector = point2 - point1;
+
+    //std::cout << vector.x << vector.y << vector.z << std::endl;
+
+    float res = glm::sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
+
+    std::cout << res <<  std::endl;
+
+    return res;
+}
+
+float Line::DistancePointPlane(vec3 Point, Line Plane)
+{
+    float    sb, sn, sd;
+
+        sn = -dot( Plane.DirectionVector, (Point - Plane.Position));
+        sd = dot(Plane.DirectionVector, Plane.DirectionVector);
+        sb = sn / sd;
+
+        vec3 intersection = Point + sb * Plane.DirectionVector;
+        return DistanceTwoPoints(Point, intersection);
+}
+
+vec3 Line::AveragePoint(vec3 point1, vec3 point2)
+{
+    return vec3((point1.x + point2.x)/2,(point1.y + point2.y)/2,(point1.z + point2.z)/2);
+}
+
+float Line::LineAngle(Line l1, Line l2)
+{
+
+}
+
+//operator
+
+std::ostream& operator << (std::ostream &stream,const vec3 &position)
+{
+    stream << position.x << " " << position.y << " " << position.z << " ";
+
+    return stream;
+}
+
+std::ostream& operator << (std::ostream &stream,const vec2 &position)
+{
+    stream << position.x << " " << position.y;
+
+    return stream;
+}
+
+std::ostream& operator <<(std::ostream &stream, const Line &line)
+{
+    stream << "Line position: " << line.Position << "direction: " << line.DirectionVector;
+
+    return stream;
+}
+

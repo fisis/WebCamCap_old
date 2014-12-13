@@ -1,0 +1,179 @@
+#include "parallelhandle.h"
+
+#include <QFutureSynchronizer>
+#include <QFutureWatcher>
+#include <QFuture>
+
+CaptureThread::CaptureThread(QWaitCondition *q, CaptureCamera *cam, QThread *parent) : QThread(parent)
+{
+    abort = false;
+
+    line = q;
+    Cam = cam;
+}
+
+CaptureThread::~CaptureThread()
+{
+    mutex.lock();
+    abort = true;
+    mutex.unlock();
+
+    if(!wait(2000)) //Wait until it actually has terminated (max. 5 sec)
+    {
+        std::cout << "bad ending" << std::endl;
+      this->terminate(); //Thread didn't exit in time, probably deadlocked, terminate it!
+      this->exit();
+      this->quit();
+    }
+}
+
+void CaptureThread::run()
+{
+    while(!abort)
+    {
+        mutex.lock();
+
+
+        Result = Cam->RecordNextFrame();
+
+        emit ResultReady(Result);
+
+        if(!line->wait(&mutex,1000))
+        {
+            std::cout << "something happened" << std::endl;
+            //emit ResultReady(Result);
+            //line->wait(&mutex);
+        }
+
+        mutex.unlock();
+    }
+
+    std::cout << "ending" << std::endl;
+}
+
+ParallelIntersections::ParallelIntersections(std::vector <CaptureCamera*> cams, float epsilon, const std::vector<Edge> &topology, OpenGLWindow *opengl)
+{
+    for(int i = 0; i < topology.size(); i++)
+    {
+        Topology.push_back(topology[i]);
+    }
+
+    Opengl = opengl;
+    Epsilon = epsilon;
+    cameras = cams;
+
+    for(size_t i = 0; i < cameras.size(); i++)
+    {
+        haveResults.push_back(false);
+        Results.push_back(std::vector<Line>());
+        camThreads.push_back(new CaptureThread(&allLines, cameras[i]));
+        connect(camThreads[i],SIGNAL(ResultReady(std::vector<Line>)),this,SLOT(ResultReady(std::vector<Line>)));
+    }
+
+    timer.start();
+
+    for(size_t i = 0; i < cameras.size(); i++)
+    {
+        camThreads[i]->start();
+    }
+}
+
+ParallelIntersections::~ParallelIntersections()
+{
+    for(size_t i = 0; i < camThreads.size(); i++)
+    {
+        delete camThreads[i];
+    }
+}
+
+void ParallelIntersections::ResultReady(std::vector<Line> lines)
+{
+    waitKey(1);
+
+    QObject *obj = QObject::sender();
+
+    for(size_t i = 0; i < camThreads.size(); i++)
+    {
+        if(obj == camThreads[i])
+        {
+            if(haveResults[i])
+            {
+                std::cout << "bad sync" << std::endl;
+            }
+
+            haveResults[i] = true;
+            for(size_t j = 0; j < Topology.size(); j++)
+            {
+                if(Topology[j].index_a == i)
+                {
+                    Topology[j].a = lines;
+                }
+
+                if(Topology[j].index_b == i)
+                {
+                    Topology[j].b = lines;
+                }
+
+                Results[i] = lines;
+            }
+        }
+    }
+
+    for(size_t i = 0; i < camThreads.size(); i++)
+    {
+        if(!haveResults[i])
+        {
+            return;
+        }
+    }
+
+    Points.clear();
+
+    Intersections();
+
+    Opengl->setFrame(Results, Points);
+
+    std::cout << timer.elapsed() << std::endl;
+
+    timer.restart();
+
+    allLines.wakeAll();
+    QCoreApplication::processEvents();
+}
+
+void ParallelIntersections::Intersection(Edge &camsEdge)
+{
+    vec3 tempPoint;
+
+     for(size_t i = 0; i < camsEdge.a.size(); i++)
+     {
+         for(size_t j = 0; j < camsEdge.b.size(); j++)
+         {
+             tempPoint = Line::Intersection(camsEdge.a[i], camsEdge.b[j], camsEdge.Epsilon);
+
+             if(tempPoint != vec3(0,0,0))
+             {
+                camsEdge.Points.push_back(tempPoint);
+             }
+         }
+     }
+
+     camsEdge.a.clear();
+     camsEdge.b.clear();
+}
+
+void ParallelIntersections::Intersections()
+{
+    QtConcurrent::map(Topology, ParallelIntersections::Intersection);
+
+    for(size_t i = 0; i < Topology.size(); i++)
+    {
+        Points.insert(Points.end(), Topology[i].Points.begin(), Topology[i].Points.end());
+        Topology[i].Points.clear();
+    }
+
+    for(size_t i = 0; i < camThreads.size(); i++)
+    {
+        haveResults[i] = false;
+    }
+}

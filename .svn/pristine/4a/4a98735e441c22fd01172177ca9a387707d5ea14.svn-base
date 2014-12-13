@@ -1,0 +1,20 @@
+#include <QApplication>
+#include "Gui/mainwindow.h"
+#include <GL/glut.h>
+
+Q_DECLARE_METATYPE(std::vector<Line>)
+
+int main(int argc, char *argv[])
+{
+    glutInit(&argc, argv);
+    qRegisterMetaType<std::vector<Line> >("std::vector<Line>");
+    qRegisterMetaType<std::vector<vec3> >("std::vector<vec3>");
+
+    //std::cout << Line::LineAngle(vec2(2,2), vec2(-2,2))*57.2957795 << std::endl;
+
+    QApplication a(argc, argv);
+    MainWindow w;
+    w.show();
+
+    return a.exec();
+}

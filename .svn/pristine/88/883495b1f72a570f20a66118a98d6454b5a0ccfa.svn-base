@@ -1,0 +1,91 @@
+#include "addcamera.h"
+#include "ui_addcamera.h"
+
+AddCamera::AddCamera(QWidget *parent, vec3 roomDims) :
+    QDialog(parent),
+    ui(new Ui::AddCamera)
+{
+    ui->setupUi(this);
+    record = false;
+    RoomDims = roomDims;
+
+    this->setWindowTitle("Add new Camera");
+}
+
+AddCamera::~AddCamera()
+{
+    delete ui;
+}
+
+void AddCamera::on_buttonBox_accepted()
+{
+    cam = new CaptureCamera(vec3(ui->X->text().toFloat(),
+                                 ui->Y->text().toFloat(),
+                                 ui->Z->text().toFloat()),
+                            RoomDims,
+                            ui->Name->text().toStdString(),
+                            ui->deviceUSB_ID->text().toInt(),
+                            ui->zorny_uhol->text().toFloat());
+
+    cam->resolution = vec2(ui->FrameCols->text().toInt(), ui->FrameRows->text().toInt());
+
+    endRecording();
+}
+
+void AddCamera::on_buttonBox_rejected()
+{
+    endRecording();
+}
+
+void AddCamera::on_Play_ID_clicked(bool checked)
+{
+    if(checked)
+    {
+        record = true;
+        Temp.open(ui->deviceUSB_ID->text().toInt());
+        namedWindow("Device ID: " + ui->deviceUSB_ID->text().toStdString(), WINDOW_AUTOSIZE);
+
+        ui->FrameCols->setText(QString::number(Temp.get(CAP_PROP_FRAME_WIDTH)));
+        ui->FrameRows->setText(QString::number(Temp.get(CAP_PROP_FRAME_HEIGHT)));
+
+        recording();
+    }
+    else
+    {
+        endRecording();
+    }
+}
+
+void AddCamera::recording()
+{
+    while(record)
+    {
+        QCoreApplication::processEvents();
+
+        Temp >> Frame;
+            imshow("Device ID: " + ui->deviceUSB_ID->text().toStdString(), Frame);
+
+        cv::waitKey(10);
+    }
+}
+
+void AddCamera::endRecording()
+{
+    if(record)
+    {
+        record = false;
+        Temp.release();
+        destroyWindow("Device ID: " + ui->deviceUSB_ID->text().toStdString());
+    }
+}
+
+
+void AddCamera::on_FrameCols_editingFinished()
+{
+    Temp.set(CAP_PROP_FRAME_WIDTH, ui->FrameCols->text().toInt());
+}
+
+void AddCamera::on_FrameRows_editingFinished()
+{
+    Temp.set(CAP_PROP_FRAME_HEIGHT, ui->FrameRows->text().toInt());
+}

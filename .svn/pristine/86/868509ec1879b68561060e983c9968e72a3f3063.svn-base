@@ -1,0 +1,48 @@
+#ifndef PARALLELHANDLE_H
+#define PARALLELHANDLE_H
+
+#include <opencv2/opencv.hpp>
+#include <queue>
+
+#include "openglwindow.h"
+#include "capturecamera.h"
+
+#include <QtCore>
+#include <QTime>
+#include <QApplication>
+
+
+using namespace glm;
+
+class worker : public QObject
+{
+  Q_OBJECT
+
+    volatile bool Running;
+
+    CaptureCamera *Cam;
+    QMutex mutex;
+    QWaitCondition *line;
+
+    std::vector<Line> Result;
+
+public:
+    explicit worker(QWaitCondition *q, CaptureCamera *cam,QObject *parent = 0);
+    ~worker(){emit finished();}
+
+signals:
+    void finished();
+    void ResultReady(std::vector<Line> lines);
+
+public slots:
+  void StopWork();
+  void StartWork();
+
+private slots:
+  void do_Work();
+
+private:
+
+};
+
+#endif // PARALLELHANDLE_H

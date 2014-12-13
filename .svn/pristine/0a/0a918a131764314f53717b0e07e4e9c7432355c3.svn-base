@@ -1,0 +1,497 @@
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+
+#include <sstream>
+
+#include <QCheckBox>
+#include <QFileDialog>
+#include <QMessageBox>
+
+MainWindow::MainWindow(QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::MainWindow)
+{
+    ui->setupUi(this);
+
+    this->setWindowTitle("");
+
+    /* SETUP ICONS */
+    QIcon icon(QDir::currentPath() + "/Pictures/main_icon.jpg");
+    this->setWindowIcon(icon);
+
+    QIcon play(QDir::currentPath() + "/Pictures/PlayIcon.png");
+    QIcon edit(QDir::currentPath() + "/Pictures/EditIcon.png");
+    QIcon save(QDir::currentPath() + "/Pictures/SaveIcon.png");
+
+    PlayIcon = play;
+    EditIcon = edit;
+    SaveIcon = save;
+
+    Project = NULL;
+
+    LogDestinationFolder = "LogFile/log.txt";
+
+    loadLog();
+
+    createRollOutMenu();
+
+    QDesktopWidget window;
+    QRect screen = window.screenGeometry( window.screenNumber(this));
+    move(screen.width()/2 - this->width()/2, screen.height()/2 - this->height()/2);
+
+    Record = false;
+    CaptureAnimation = false;
+
+    ui->AnimationsTable->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
+}
+
+MainWindow::~MainWindow()
+{
+    delete ui;
+}
+
+void MainWindow::keyPressEvent(QKeyEvent* e)
+{
+    if(e->key() == Qt::Key_W)
+    {
+        //ui->OpenGLWIndow->ZoomPlus();
+    }
+    else if(e->key() == Qt::Key_S)
+    {
+        //ui->OpenGLWIndow->ZoomMinus();
+    }
+
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent *e)
+{
+
+
+
+}
+
+
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    event->accept();
+
+    if(Project != NULL)
+    {
+        for(size_t i = 0; i < Project->getcameras().size(); i++)
+        {
+            Project->TurnOffCamera(i);
+            Project->HideCameraVideo(i);
+        }
+
+        delete(Project);
+    }
+
+    for(int i = 0; i < RecentProjectsQActions.size(); i++)
+    {
+        delete(RecentProjectsQActions.at(i));
+    }
+
+
+
+    saveLog();
+}
+
+void MainWindow::on_newProject_triggered()
+{
+    int msg;
+
+    if(Project != NULL && !Project->getSaved())
+    {
+        msg = NotSavedMessage();
+
+        if(msg == QMessageBox::Cancel)
+        {
+            return;
+        }
+        else if(msg == QMessageBox::Save)
+        {
+            on_saveProject_triggered();
+
+            if(!Project->getSaved())
+            {
+                return;
+            }
+        }
+    }
+
+    AddProject NewProjectDialog(this);
+    NewProjectDialog.setModal(true);
+    bool ok = NewProjectDialog.exec();
+
+    if(ok)
+    {
+        delete(Project);
+
+        Project = NewProjectDialog.getProject();
+        Project->setOpenglWindow(ui->OpenGLWIndow);
+        ui->OpenGLWIndow->setRoomDims(Project->getDimensions());
+    }
+}
+
+void MainWindow::OpenRecentProjects()
+{
+    QObject * sender = QObject::sender();
+
+    for(int i = 0; i < RecentProjectsQActions.size(); i++)
+    {
+        if(RecentProjectsQActions.at(i) == sender)
+        {
+            int msg;
+
+            if(Project != NULL && !Project->getSaved())
+            {
+                msg = NotSavedMessage();
+
+                if(msg == QMessageBox::Cancel)
+                {
+                    return;
+                }
+                else if(msg == QMessageBox::Save)
+                {
+                    on_saveProject_triggered();
+
+                    if(!Project->getSaved())
+                    {
+                        return;
+                    }
+                }
+            }
+
+            Project = new Room(RecentProjects[i]);
+            Project->setOpenglWindow(ui->OpenGLWIndow);
+            ui->OpenGLWIndow->setRoomDims(Project->getDimensions());
+        }
+    }
+}
+
+void MainWindow::on_openProject_triggered()
+{
+    int msg;
+
+    if(Project != NULL && !Project->getSaved())
+    {
+        msg = NotSavedMessage();
+
+        if(msg == QMessageBox::Cancel)
+        {
+            return;
+        }
+        else if(msg == QMessageBox::Save)
+        {
+            on_saveProject_triggered();
+
+            if(!Project->getSaved())
+            {
+                return;
+            }
+        }
+    }
+
+    QString filename = QFileDialog::getOpenFileName(this,tr("Load Project"), ".", tr(".txt Files (*.txt)"));
+
+    std::string filestring = filename.toStdString();
+
+    if(filestring != "")
+    {
+        std::cout << "Open project:" << filestring << std::endl;
+
+        if(!searchForRecentProjects(filestring))
+        {
+            RecentProjects.push_back(filestring);
+        }
+
+        Project = new Room(filestring);
+        Project->setOpenglWindow(ui->OpenGLWIndow);
+        ui->OpenGLWIndow->setRoomDims(Project->getDimensions());
+    }
+
+}
+
+void MainWindow::on_editProject_triggered()
+{
+    AddProject NewProjectDialog(this);
+    NewProjectDialog.EditProject(Project);
+    NewProjectDialog.setModal(true);
+
+    bool ok = NewProjectDialog.exec();
+
+    if(ok)
+    {
+        delete(Project);
+
+        Project = NewProjectDialog.getProject();
+        Project->setOpenglWindow(ui->OpenGLWIndow);
+        ui->OpenGLWIndow->setRoomDims(Project->getDimensions());
+    }
+}
+
+void MainWindow::on_saveProject_triggered()
+{
+    if(Project != NULL)
+    {
+        QString filename = QFileDialog::getSaveFileName(this,tr("Save Project"),QString::fromStdString( Project->getName()+".txt" ), tr(".txt Files (*.txt)"));
+
+        std::string filestring = filename.toStdString();
+
+        if(filestring != "")
+        {
+            if(!searchForRecentProjects(filestring))
+            {
+                RecentProjects.push_back(filestring);
+
+                if(!Project->getSaved())
+                {
+                    return;
+                }
+            }
+
+            std::ofstream outputFile;
+            outputFile.open(filestring, std::ios_base::out);
+
+            //save name of project
+            outputFile << Project->getName() << std::endl;
+
+            Project->Save(outputFile);
+            outputFile.close();
+            std::cout << "Project saved to:" << filestring << std::endl;
+        }
+    }
+    else
+    {
+        QMessageBox msgBox;
+        msgBox.setWindowTitle("");
+        msgBox.warning(this, "", "No project opened");
+        msgBox.setFixedSize(200,100);
+    }
+}
+
+void MainWindow::on_nahravanie_clicked(bool checked)
+{
+    if(checked)
+    {
+        ui->nahravanie->setText("Stop");
+        Record = true;
+
+        if(Project != NULL)
+        {
+            Project->RecordingStart();
+        }
+    }
+    else
+    {
+        ui->nahravanie->setText("Record");
+        Project->RecordingStop();
+    }
+
+}
+
+void MainWindow::on_Threshold_valueChanged(int value)
+{
+    Project->setThreshold(value);
+}
+
+void MainWindow::on_brightness_valueChanged(int value)
+{
+    Project->setBrighnessOfCamera(value);
+}
+
+void MainWindow::createRollOutMenu()
+{
+
+
+    for(size_t i = 0; i < RecentProjects.size(); i++)
+    {
+        QAction* temp = new QAction(QString::fromStdString(RecentProjects[i]),this);
+
+        RecentProjectsQActions.push_back(temp);
+        connect(RecentProjectsQActions.at(i),  SIGNAL(triggered()), this, SLOT(OpenRecentProjects() ));
+    }
+
+    ui->menuRecent_Projects->addActions(RecentProjectsQActions);
+}
+
+bool MainWindow::searchForRecentProjects(std::string filestring)
+{
+    for(size_t i = 0; i < RecentProjects.size();i++)
+    {
+        if(RecentProjects[i] == filestring)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void MainWindow::saveLog()
+{
+    std::ofstream log;
+    log.open(LogDestinationFolder, std::ios_base::ate);
+
+    std::cout << "writing log file" << std::endl;
+
+    for(size_t i = 0; i < RecentProjects.size(); i++)
+    {
+        log << RecentProjects[i] << std::endl;
+    }
+
+    log.close();
+}
+
+void MainWindow::loadLog()
+{
+    std::ifstream log;
+    log.open(LogDestinationFolder, std::ios_base::in);
+
+    std::string line;
+
+    std::cout << "reading log filQTime::e" << std::endl;
+    while(log.good())
+    {
+        getline(log,line);
+
+        if(line != "")
+        {
+            if(QFile::exists(QString::fromStdString(line)))
+            {
+                RecentProjects.push_back(line);
+                std::cout << line << std::endl;
+            }
+        }
+    }
+    log.close();
+}
+
+int MainWindow::NotSavedMessage()
+{
+    QMessageBox msgBox;
+    msgBox.setWindowTitle(" ");
+    msgBox.setText("The document has been modified.");
+    msgBox.setInformativeText("Do you want to save your changes?");
+    msgBox.setStandardButtons(QMessageBox::Discard | QMessageBox::Cancel | QMessageBox::Save);
+    msgBox.setDefaultButton(QMessageBox::Save);
+
+    return msgBox.exec();
+}
+
+void MainWindow::on_playButton_pressed()
+{
+    if(!CaptureAnimation)
+    {
+        CaptureAnimation = true;
+        Project->CaptureAnimationStart();
+    }
+}
+
+void MainWindow::on_stopButton_pressed()
+{
+    if(CaptureAnimation)
+    {
+        Animation * ActualAnimation = Project->CaptureAnimationStop();
+        CaptureAnimation = false;
+
+        int row = ui->AnimationsTable->rowCount();
+        ui->AnimationsTable->insertRow(row);
+
+        QTableWidgetItem *x = new QTableWidgetItem(QString::fromStdString(ActualAnimation->getName()));
+        ui->AnimationsTable->setItem(row, 0, x);
+        x= new QTableWidgetItem(QString::number(ActualAnimation->getFrameRate()));
+        ui->AnimationsTable->setItem(row, 1, x);
+        x= new QTableWidgetItem(QString::number(ActualAnimation->getLength()));
+        ui->AnimationsTable->setItem(row,2,x);
+        x= new QTableWidgetItem(PlayIcon, "");
+        ui->AnimationsTable->setItem(row, 3, x);
+        x= new QTableWidgetItem(EditIcon, "");
+        ui->AnimationsTable->setItem(row, 4, x);
+        x= new QTableWidgetItem(SaveIcon, "");
+        ui->AnimationsTable->setItem(row, 5, x);
+    }
+}
+
+void MainWindow::on_AnimationsTable_cellChanged(int row, int column)
+{
+    if(column == 0)
+    {
+         //Animations[row]->setName(ui->AnimationsTable->item(row, column)->text().toStdString());
+    }
+}
+
+void MainWindow::on_AnimationsTable_cellClicked(int row, int column)
+{
+    switch (column)
+    {
+    case 3:
+        //play
+        ui->AnimationsTable->item(row, column)->setSelected(false);
+        break;
+    case 4:
+        //edit animation
+        ui->AnimationsTable->item(row, column)->setSelected(false);
+        break;
+    case 5:
+        //save animation
+        ui->AnimationsTable->item(row, column)->setSelected(false);
+        break;
+    default:
+        break;
+    }
+}
+
+void MainWindow::on_AddStructure_clicked()
+{
+
+}
+
+void MainWindow::on_LinesCheck_stateChanged(int arg1)
+{
+    if(arg1 == 0)
+    {
+        ui->OpenGLWIndow->setDrawLines(false);
+    }
+    else
+    {
+        ui->OpenGLWIndow->setDrawLines(true);
+    }
+}
+
+void MainWindow::on_JointsCheck_stateChanged(int arg1)
+{
+    if(arg1 == 0)
+    {
+        ui->OpenGLWIndow->setDrawJoints(false);
+    }
+    else
+    {
+        ui->OpenGLWIndow->setDrawJoints(true);
+    }
+}
+
+void MainWindow::on_BonesCheck_stateChanged(int arg1)
+{
+    if(arg1 == 0)
+    {
+        ui->OpenGLWIndow->setDrawBones(false);
+    }
+    else
+    {
+        ui->OpenGLWIndow->setDrawBones(true);
+    }
+}
+
+void MainWindow::on_LivePipe_stateChanged(int arg1)
+{
+    if(arg1 == 0)
+    {
+        Project->setPipe(false);
+    }
+    else
+    {
+        Project->setPipe(true);
+    }
+}

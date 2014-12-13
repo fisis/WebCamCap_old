@@ -1,0 +1,35 @@
+#ifndef LINE_H
+#define LINE_H
+
+#include <iostream>
+#include <vector>
+#include <string>
+#include <glm/glm.hpp>
+
+using namespace glm;
+
+class Line
+{
+public:
+    bool Found;
+
+    vec3 Position;
+    vec3 DirectionVector;
+
+    size_t Intersections;
+
+    Line(vec3 pos, vec3 vec);
+
+    static void ClosestPointsOnTwoLines(Line l1, Line l2, vec3 &closestPointLine1, vec3 &closestPointLine2);
+    static vec3 IntersectionLinePlane(Line l1, Line Plane);
+    static float DistanceTwoPoints(vec3 point1, vec3 point2);
+    static float DistancePointPlane(vec3 point, Line Plane);
+    static vec3 AveragePoint(vec3 point1, vec3 point2);
+
+};
+
+std::ostream& operator << (std::ostream &stream,const vec3 &position);
+std::ostream& operator << (std::ostream &stream,const vec2 &position);
+std::ostream& operator << (std::ostream &stream, const Line &line);
+
+#endif // LINE_H

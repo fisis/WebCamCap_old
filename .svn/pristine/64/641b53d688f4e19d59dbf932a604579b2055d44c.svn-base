@@ -1,0 +1,414 @@
+#include "capturecamera.h"
+
+//#define GLM_FORCE_RADIANS
+#include <glm/gtx/rotate_vector.hpp>
+#include <glm/ext.hpp>
+
+using namespace cv;
+using namespace glm;
+
+CaptureCamera::CaptureCamera(vec3 pos, vec3 roomDimensions, std::string name, int ID, float angle)
+{
+    TurnedOn = false;
+    ShowWindow = false;
+    Video_usb_ID = ID;
+    Name = name;
+    Position = pos;
+    AngleOfView = angle;
+    AnglePerPixel = 0;
+    ThresholdValue = 255;
+    RoomDimensions = roomDimensions;
+    ComputeDirVector();
+
+    std::cout << "Vector to middle: " << DirectionVectorToMiddle << std::endl;
+
+    ContourColor = Scalar(0, 0, 255);
+
+    DilateKernel = getStructuringElement(MORPH_ELLIPSE, Size(3,3));
+}
+
+std::vector<Line> CaptureCamera::RecordNextFrame()
+{
+    Lines.clear();
+
+    if(!TurnedOn)
+    {
+        std::vector<Line> blank;
+        return blank;
+    }
+
+    Camera >> Frame;
+
+    UseFilter();
+    MiddleOfContours();
+    CreateLines();
+
+    circle(Frame, Point(Frame.cols/2, Frame.rows/2), 1, CV_RGB(0,255,0), 2);
+
+    if(ShowWindow)
+        imshow(Name, Frame);
+
+    return Lines;
+}
+
+void CaptureCamera::UseFilter()
+{
+    Frame.copyTo(FrameTemp);
+
+    absdiff(FrameTemp,FrameBackground, FrameTemp);
+
+    split(FrameTemp, ChannelsFrameTemp);
+
+    for(size_t i = 0; i < 3; i++)
+    {
+        threshold(ChannelsFrameTemp[i], ChannelsFrameTemp[i], 20, 255, THRESH_BINARY);
+    }
+
+    bitwise_or(ChannelsFrameTemp[0], ChannelsFrameTemp[1], FrameTemp);
+    bitwise_or(FrameTemp, ChannelsFrameTemp[2], FrameTemp);
+
+    morphologyEx(FrameTemp, FrameTemp, MORPH_OPEN , DilateKernel);// , Point(-1,-1),  5);
+
+    Frame.copyTo(FrameTemp, FrameTemp);
+
+    cvtColor(FrameTemp, FrameTemp, COLOR_BGR2GRAY);
+    medianBlur(FrameTemp, FrameTemp, 3);
+
+    threshold(FrameTemp,FrameTemp, ThresholdValue, 256, THRESH_BINARY);
+
+    morphologyEx(FrameTemp, FrameTemp, MORPH_OPEN , DilateKernel);
+
+    findContours(FrameTemp, Contours , RETR_EXTERNAL, CHAIN_APPROX_NONE);
+
+    for(size_t i = 0; i < Contours.size(); i++)
+    {
+        double contArea = contourArea(Contours[i]);
+
+        if(contArea > 500 || contArea <= 20)
+        {
+            Contours.erase(Contours.begin()+i);
+        }
+    }
+
+    drawContours(Frame, Contours, -1, ContourColor , CV_FILLED);
+}
+
+vec2 CaptureCamera::GetUndisortedPosition(vec2 frameResolution, vec2 position)
+{
+    //std::cout << "old_position " << position.x << " " << position.y << std::endl;
+
+    double rx = (position.x-frameResolution.x/2);
+    double ry = (position.y-frameResolution.y/2);
+
+    double koefs[5];
+
+    koefs[0] = 1.3052770701803743e-01;
+    koefs[1] = -9.0379059948047979e-01;
+    koefs[2] = -6.7746705600785278e-03;
+    koefs[3] = 4.6668197991296947e-03;
+    koefs[4] = 1.3811390526336100e+00;
+
+    double camMatrix[9];
+
+    camMatrix[0] = 6.9275889314344511e+02;
+    camMatrix[1] = 0;
+    camMatrix[2] = 3.1950000000000000e+02;
+    camMatrix[3] = 0;
+    camMatrix[4] = 6.9275889314344511e+02;
+    camMatrix[5] = 2.3950000000000000e+02;
+    camMatrix[6] = 0;
+    camMatrix[7] = 0;
+    camMatrix[8] = 1;
+
+
+    cv::Mat srcMat = cv::Mat(1,1,CV_64FC2);
+    srcMat.at<Point2d>(0,0).x = static_cast<float>(rx);
+    srcMat.at<Point2d>(0,0).y = static_cast<float>(ry);
+
+    cv::Mat destMat = cv::Mat(1,1,CV_64FC2);
+    cv::Mat cameraMat = Mat::eye(3, 3, CV_64F);
+    cv::Mat distCoeffs  = Mat::zeros(8, 1, CV_64F);
+
+    for(int i = 0; i < 5; i++)
+    {
+        distCoeffs.at<double>(i,0) = static_cast<double>(koefs[i]);
+    }
+
+    for(int i = 0; i < 3; i++)
+        for(int j = 0; j < 3; j++)
+        {
+            cameraMat.at<double>(i,j) = static_cast<double>(camMatrix[3*i+j]);
+        }
+
+    cv::undistortPoints(srcMat, destMat, cameraMat, distCoeffs);
+
+    double fx = cameraMat.at<double>(0,0);
+    double fy = cameraMat.at<double>(1,1);
+    double cx = cameraMat.at<double>(0,2);
+    double cy = cameraMat.at<double>(1,2);
+
+    destMat.at<Point2d>(0,0).x = destMat.at<Point2d>(0,0).x * fx + cx + frameResolution.x/2;
+    destMat.at<Point2d>(0,0).y = destMat.at<Point2d>(0,0).y * fy + cy + frameResolution.y/2;
+
+    //std::cout << "new_position " <<(double) destMat.at<Point2d>(0,0).x << " " << (double)  destMat.at<Point2d>(0,0).y << std::endl;
+
+    return vec2(destMat.at<Point2d>(0,0).x , destMat.at<Point2d>(0,0).y);
+}
+
+void CaptureCamera::MiddleOfContours()
+{
+    CenterOfContour.clear();
+
+    for(size_t i = 0; i < Contours.size(); i++)
+    {
+        CenterMoment = moments(Contours[i]);
+        CenterTemp = vec2(CenterMoment.m10/CenterMoment.m00, CenterMoment.m01/CenterMoment.m00);
+
+        if(!isnan(CenterTemp.x) && !isnan(CenterTemp.y))
+        {
+            //CenterTemp = GetUndisortedPosition(vec2(Frame.cols, Frame.rows), CenterTemp);
+
+            CenterOfContour.push_back(CenterTemp);
+
+            circle(Frame, Point(CenterTemp.x, CenterTemp.y), 1, CV_RGB(0,0,255), 2);
+        }
+    }
+}
+
+void CaptureCamera::CreateLines()
+{
+    Lines.clear();
+
+    if(AnglePerPixel == 0)
+    {
+        AnglePerPixel = ( (double)  AngleOfView ) / glm::sqrt( (Frame.cols * Frame.cols + Frame.rows * Frame.rows));
+    }
+
+    for(size_t i = 0; i < CenterOfContour.size(); i++)
+    {
+        //vypocitam stred contury vzhľadom ku stredu obrazovky
+        CenterRelativeTemp = vec2(CenterOfContour[i].x - Frame.cols/2,CenterOfContour[i].y - Frame.rows/2);
+        //rotacie
+        DirectionTemp = glm::rotateZ((glm::detail::tvec3<double, (glm::precision)0u>) DirectionVectorToMiddle, (-CenterRelativeTemp.x * AnglePerPixel));//*0.0174532925);
+
+        DirectionTemp = glm::rotateX((glm::detail::tvec3<double, (glm::precision)0u>) DirectionTemp , (-CenterRelativeTemp.y * AnglePerPixel));//*0.0174532925);
+        Lines.push_back(Line(Position , DirectionTemp));
+    }
+}
+
+void CaptureCamera::ComputeDirVector()
+{
+    DirectionVectorToMiddle = vec3(RoomDimensions.x/2 - Position.x , RoomDimensions.y/2 - Position.y , RoomDimensions.z/2 - Position.z);
+}
+
+void CaptureCamera::TurnOn()
+{
+    if(TurnedOn)
+        return;
+
+    Camera.open(Video_usb_ID);
+
+    if(Camera.isOpened())
+    {
+        TurnedOn = true;
+
+        if(resolution.x != 0 && resolution.y !=0)
+        {
+            Camera.set(CAP_PROP_FRAME_WIDTH, resolution.x);
+            Camera.set(CAP_PROP_FRAME_HEIGHT, resolution.y);
+        }
+
+        /*
+#ifdef _WIN32 // note the underscore: without it, it's not msdn official!
+    // Windows (x64 and x86)
+#elif __linux__
+    // linux
+#elif __APPLE__
+    // Mac OS, not sure if this is covered by __posix__ and/or __unix__ though...
+#endif
+
+*/
+    }
+    else
+        TurnedOn = false;
+}
+
+void CaptureCamera::TurnOff()
+{
+    if(TurnedOn)
+    {
+        TurnedOn = false;
+
+        Camera.release();
+    }
+
+}
+
+void CaptureCamera::Show()
+{
+    if(!ShowWindow)
+    {
+        ShowWindow = true;
+        namedWindow(Name, WINDOW_AUTOSIZE);
+    }
+}
+
+void CaptureCamera::Hide()
+{
+    if(ShowWindow)
+    {
+        ShowWindow = false;
+        destroyWindow(Name);
+    }
+}
+
+void CaptureCamera::Save(std::ofstream &outputFile)
+{
+    outputFile << Name << " " << Position.x << " " << Position.y << " "
+               << Position.z << " " << Video_usb_ID << " " << AngleOfView << std::endl;
+}
+
+void CaptureCamera::CalibNoMarkers()
+{
+    if(TurnedOn)
+    {
+        int i = 0, maxIters = 10;
+        Scalar meanValue, lastMeanValue;
+
+
+        Camera >> FrameBackground;
+         waitKey(33);
+
+         lastMeanValue = mean(FrameBackground);
+
+         Camera >> FrameBackground;
+         waitKey(33);
+
+         meanValue = mean(FrameBackground);
+
+        while(i < maxIters && ( abs( lastMeanValue.val[0] - meanValue.val[0] ) > 1 || abs( lastMeanValue.val[1] - meanValue.val[1] ) > 1 || abs( lastMeanValue.val[2] - meanValue.val[2] ) > 1 ) )
+        {
+            Camera >> FrameBackground;
+            lastMeanValue = meanValue;
+            meanValue  = mean(FrameBackground);
+            ++i;
+            waitKey(66);
+        }
+
+        std::cout << Name << " calibrated in " << i << " iterations" << std::endl;
+
+        Mat temp;
+
+        for(size_t i = 0; i < 10; i++)
+        {
+            Camera >> temp;
+
+            for(int i = 0; i < temp.rows; i++)
+            {
+                for(int j = 0; j < temp.cols; j++)
+                {
+                    if(temp.at<Vec3b>(i,j)[0] > FrameBackground.at<Vec3b>(i,j)[0] || temp.at<Vec3b>(i,j)[1] > FrameBackground.at<Vec3b>(i,j)[1] || temp.at<Vec3b>(i,j)[2] > FrameBackground.at<Vec3b>(i,j)[2])
+                    {
+                        FrameBackground.at<Vec3b>(i,j) = temp.at<Vec3b>(i,j);
+                    }
+                }
+            }
+            waitKey(10);
+        }
+
+        if(ShowWindow)
+        {
+             imshow(Name, FrameBackground);
+        }
+    }
+}
+
+void CaptureCamera::CalibWithMarkers()
+{
+    ThresholdValue = 255;
+
+    if(TurnedOn)
+    {
+
+        size_t thresholdUp, thresholdLow;
+
+
+
+        for(size_t i = 0; i < 15; i++)
+        {
+            Camera >> Frame;
+            waitKey(10);
+        }
+
+        size_t nLines;
+
+        //step 1, find first value which gives some Lines
+        while(ThresholdValue > 20)
+        {
+            UseFilter();
+            MiddleOfContours();
+            CreateLines();
+
+            if(Lines.size() == 0)
+            {
+                --ThresholdValue;
+                continue;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        //some difference in light intensity (rotation of LED)
+        ThresholdValue -= 10;
+
+        UseFilter();
+        MiddleOfContours();
+        CreateLines();
+
+        nLines = Lines.size();
+
+        thresholdUp = ThresholdValue;
+        std::cout << "calibrated upper value" << thresholdUp << std::endl;
+
+        //step 2 , find threshold where num of lines is starting to grow
+        while(ThresholdValue > 0)
+        {
+            --ThresholdValue;
+
+            UseFilter();
+            MiddleOfContours();
+            CreateLines();
+
+            if(nLines < Lines.size())
+            {
+                thresholdLow = ThresholdValue;
+                std::cout << "calibrated lower value" << thresholdLow << std::endl;
+                break;
+            }
+        }
+
+        ThresholdValue = thresholdLow + (thresholdUp + thresholdLow)/8;
+    }
+}
+
+void CaptureCamera::setContrast(int value)
+{
+    Camera.set(CAP_PROP_CONTRAST, value/100.0f);
+}
+
+void CaptureCamera::setBrightness(int value)
+{
+    Camera.set(CAP_PROP_BRIGHTNESS, value/100.0f);
+}
+
+void CaptureCamera::setSaturation(int value)
+{
+    Camera.set(CAP_PROP_SATURATION, value/100.0f);
+}
+
+void CaptureCamera::setSharpness(int value)
+{
+    Camera.set(CAP_PROP_SHARPNESS, value/100.0f);
+}

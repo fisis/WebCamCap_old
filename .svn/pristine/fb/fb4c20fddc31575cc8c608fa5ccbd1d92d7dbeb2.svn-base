@@ -1,0 +1,94 @@
+#include "structureeditor.h"
+#include "ui_structureeditor.h"
+
+#include <QToolBar>
+#include <QVBoxLayout>
+#include <QTextEdit>
+
+StructureEditor::StructureEditor(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::StructureEditor)
+{
+    CurrentItem = NULL;
+
+    ui->setupUi(this);
+}
+
+StructureEditor::~StructureEditor()
+{
+    delete ui;
+}
+
+void StructureEditor::BuildStructure()
+{
+    Structure = new ModelStructure(ui->Editor);
+}
+
+void StructureEditor::on_Add_clicked()
+{
+    if(CurrentItem == NULL)
+    {
+        QTreeWidgetItem* item = new QTreeWidgetItem(QStringList("New Point " + QString::number(ui->Editor->topLevelItemCount())));
+        item->setFlags(Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+        ui->Editor->addTopLevelItem(item);
+
+        return;
+    }
+
+    if(CurrentItem->parent() != NULL)
+    {
+        QTreeWidgetItem* item = new QTreeWidgetItem(CurrentItem->parent() , QStringList("New Point " + QString::number(CurrentItem->parent()->childCount())));
+        item->setFlags(Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+        CurrentItem->parent()->addChild(item);
+    }
+    else
+    {
+        QTreeWidgetItem* item = new QTreeWidgetItem(CurrentItem->parent() , QStringList("New Point " + QString::number(ui->Editor->topLevelItemCount())));
+        item->setFlags(Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+        ui->Editor->addTopLevelItem(item);
+    }
+}
+
+void StructureEditor::on_AddChild_clicked()
+{
+    if(CurrentItem != NULL)
+    {
+      QTreeWidgetItem* item = new QTreeWidgetItem(CurrentItem , QStringList("New Point " + QString::number(CurrentItemChildCount)));
+      item->setFlags(Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+      CurrentItem->addChild(item);
+    }
+}
+
+void StructureEditor::on_Remove_clicked()
+{
+    if(CurrentItem != NULL)
+    {
+        CurrentItem->~QTreeWidgetItem();
+    }
+}
+
+void StructureEditor::on_Up_clicked()
+{
+
+}
+
+void StructureEditor::on_Down_clicked()
+{
+
+}
+
+void StructureEditor::on_buttonBox_accepted()
+{
+    BuildStructure();
+}
+
+void StructureEditor::on_Editor_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
+{
+    CurrentItem = current;
+
+    if(CurrentItem != NULL)
+    {
+        CurrentItemColumn = ui->Editor->currentColumn();
+        CurrentItemChildCount = CurrentItem->childCount();
+    }
+}

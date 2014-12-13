@@ -1,0 +1,89 @@
+#include "animation.h"
+
+Animation::Animation(float Epsilon, std::string name, ModelStructure *struc)
+{
+    RoomEpsilon = Epsilon;
+    Name = name;
+    BaseStructure = struc;
+}
+
+void Animation::AddFrame(Frame k)
+{
+    Frames.push_back(k);
+}
+
+void Animation::AddFrame(std::vector<vec3> pts, std::vector<std::vector<Line> > lines, int elapsed)
+{
+    Frames.push_back(Frame(pts, lines, elapsed));
+}
+
+void Animation::Save(ExportFormat format, std::string file)
+{
+    std::ofstream outputFile;
+    outputFile.open(file, ios_base::out);
+
+    switch (format) {
+    case  BVH:
+       BaseStructure->Save(format, outputFile);
+       SaveBVH(outputFile);
+        break;
+    default:
+        break;
+    }
+}
+
+void Animation::PostProcess()
+{
+    //count framerate
+    int sum = 0;
+
+    for(size_t i = 1; i < Frames.size(); i++)
+    {
+        sum += Frames[i].getElapsedTime();
+    }
+
+    FrameRate = 1000 / ( sum/ (float) Frames.size() );
+
+    //vodorovna zamena bodov
+
+
+
+    //smooth positions, if some jumps from frame to frame
+
+
+
+    //if not nuf pts try to find them, if not nuf intersections aproximate position
+    std::vector<size_t> FramesWithMissingPoints;
+
+    for(size_t i = 0; i < Frames.size(); i++)
+    {
+        if(Frames[i].getPoints().size() != BaseStructure->getSize())
+        {
+            FramesWithMissingPoints.push_back(i);
+        }
+    }
+
+    handleBadFrames(FramesWithMissingPoints);
+
+    //smooth framerate (splines)
+
+
+
+    //for every frame get structure
+    findStructure();
+}
+
+void Animation::SaveBVH(ofstream &outputFile)
+{
+
+}
+
+void Animation::handleBadFrames(std::vector<size_t> Frames)
+{
+
+}
+
+void Animation::findStructure()
+{
+
+}

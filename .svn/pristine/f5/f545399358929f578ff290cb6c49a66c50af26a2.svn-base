@@ -1,0 +1,533 @@
+ #include "room.h"
+
+//include for pipe
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include <QApplication>
+
+Room::Room(OpenGLWindow *opengl, vec3 dimensions, float eps, std::string name)
+{
+    if(dimensions == vec3(0.0f, 0.0f, 0.0f) && eps == 0.5 &&  name == "Default Project")
+    {
+        Saved = true;
+    }
+    else
+    {
+        Saved = false;
+    }
+
+    Opengl = opengl;
+    Name = name;
+    RoomDimensions = dimensions;
+
+    std::cout << RoomDimensions << std::endl;
+
+    Pipe = CaptureAnimation = Record = false;
+
+    Epsilon  = eps;
+
+    ActiveCams = 0;
+    ActiveCamIndex = 0;
+}
+
+Room::Room(std::string file)
+{
+    std::ifstream inputFile;
+    inputFile.open(file);
+
+    std::getline(inputFile, Name);
+
+    std::string line;
+    std::stringstream linestream;
+
+    std::getline(inputFile, line);
+    linestream << line;
+
+    linestream >> RoomDimensions.x;
+    linestream >> RoomDimensions.y;
+    linestream >> RoomDimensions.z;
+    linestream >> Epsilon;
+    linestream.flush();
+
+    size_t numOfCams;
+    std::stringstream linestream2;
+    std::getline(inputFile, line);
+    linestream2 << line;
+
+    linestream2 >> numOfCams;
+
+    for(size_t i = 0; i < numOfCams; i++)
+    {
+        std::stringstream linestream3;
+        std::getline(inputFile,line);
+        linestream3 << line;
+
+        std::string tname;
+        linestream3 >>  tname;
+
+        vec3 tposition;
+        linestream3 >> tposition.x;
+        linestream3 >> tposition.y;
+        linestream3 >> tposition.z;
+
+        int tID;
+        linestream3 >> tID;
+
+        float tAngle;
+        linestream3 >> tAngle;
+
+        vec2 resolution;
+        linestream3 >> resolution.x;
+        linestream3 >> resolution.y;
+
+        CaptureCamera* temp = new CaptureCamera(tposition, RoomDimensions, tname, tID, tAngle);
+
+        temp->resolution = resolution;
+
+        AddCamera(temp);
+        TurnOnCamera(cameras.size()-1);
+        ShowCameraVideo(cameras.size()-1);
+        cameras[i]->CalibNoMarkers();
+
+    }
+
+    inputFile.close();
+
+    ActiveCams = 0;
+    ActiveCamIndex = 0;
+
+    Saved = true;
+}
+
+Room::~Room()
+{
+    for(size_t i = 0; i < cameras.size(); i++)
+    {
+        cameras[i]->Hide();
+        cameras[i]->TurnOff();
+        delete(cameras[i]);
+        delete(workers[i]);
+        if(!workerthreads[i]->wait(3000))
+        {
+            workerthreads[i]->quit();
+        }
+        delete(workerthreads[i]);
+    }
+
+    for(size_t i = 0; i < Animations.size(); i++)
+    {
+        delete(Animations[i]);
+    }
+
+    if(Pipe)
+    {
+        setPipe(false);
+    }
+}
+
+void Room::AddCamera(CaptureCamera *cam)
+{
+    cameras.push_back(cam);
+
+    if(cam->getTurnedOn())
+    {
+        ActiveCams++;
+        ActiveCamIndex = cameras.size()-1;
+    }
+
+    Saved = false;
+
+    haveResults.push_back(false);
+    Results.push_back(std::vector<Line>());
+
+    workers.push_back(new worker(&allLines, cam));
+    workerthreads.push_back(new QThread);
+
+    workers[workers.size()-1]->moveToThread(workerthreads[workerthreads.size()-1]);
+
+
+    connect( this, SIGNAL(startWork2D()), this, SLOT(record2D()));
+    connect( this, SIGNAL(startWork()), workers[workers.size()-1], SLOT(StartWork()));
+    connect( this, SIGNAL(stopWork()), workers[workers.size()-1], SLOT(StopWork()));
+    connect(workers[workers.size()-1],SIGNAL(ResultReady(std::vector<Line>)),this,SLOT(ResultReady(std::vector<Line>)), Qt::QueuedConnection);
+
+    connect(workers[workers.size()-1], SIGNAL(finished()), workerthreads[workers.size()-1], SLOT(quit()));
+    connect(workers[workers.size()-1], SIGNAL(finished()), workers[workers.size()-1], SLOT(deleteLater()));
+    connect(workerthreads[workers.size()-1], SIGNAL(finished()), workerthreads[workers.size()-1], SLOT(deleteLater()));
+
+    workerthreads[workerthreads.size()-1]->start();
+
+    MakeTopology();
+}
+
+void Room::AddCamera(vec3 pos, std::string name, int ID, int angle)
+{
+    CaptureCamera* temp = new CaptureCamera(pos, RoomDimensions, name, ID, angle);
+
+    AddCamera(temp);
+}
+
+void Room::setDimensions(vec3 dims)
+{
+    RoomDimensions = dims;
+
+    for(size_t i = 0; i < cameras.size(); i++)
+    {
+        cameras[i]->setDimensions(dims);
+    }
+
+    Saved = false;
+}
+
+void Room::setEpsilon(float size)
+{
+    Epsilon = size;
+    Saved = false;
+}
+
+void Room::RemoveCamera(size_t index)
+{
+    if(cameras[index]->getTurnedOn())
+    {
+        ActiveCams--;
+        if(ActiveCams == 1)
+        {
+            for(size_t i = 0; i < cameras.size(); i++)
+            {
+                if(cameras[i]->getTurnedOn())
+                {
+                    ActiveCamIndex == i;
+                }
+            }
+        }
+    }
+
+    HideCameraVideo(index);
+    TurnOffCamera(index);
+    cameras.erase(cameras.begin()+index);
+    Saved = false;
+
+    MakeTopology();
+}
+
+void Room::MakeTopology()
+{
+    CamTopology.clear();
+
+    vec3 pos1, pos2;
+    vec3 dir1, dir2;
+
+    float min = -181.0f, max = 181.0f, temp_angle;
+    int min_index = -1, max_index = -1;
+
+    //get
+    for(size_t i = 0; i < cameras.size(); i++)
+    {
+        pos1 = cameras[i]->getPosition();
+        dir1 = cameras[i]->getDirVector();
+
+        for(size_t j = i+1; j < cameras.size(); j++)
+        {
+            pos2 = cameras[j]->getPosition();
+            dir2 = cameras[j]->getDirVector();
+
+            temp_angle = Line::LineAngle(vec2(dir1.x, dir1.y),vec2(dir2.x, dir2.y));
+
+            if(temp_angle < 0)
+            {
+                if(temp_angle > min)
+                {
+                    min = temp_angle;
+                    min_index = j;
+                }
+            }
+            else
+            {
+                if(temp_angle < max)
+                {
+                    max = temp_angle;
+                    max_index = j;
+                }
+            }
+        }
+
+        if(min_index != -1)
+        {
+            CamTopology.push_back(Edge(i,min_index, Epsilon));
+        }
+
+        if(max_index != -1)
+        {
+            CamTopology.push_back(Edge(i,max_index, Epsilon));
+        }
+    }
+}
+
+void Room::TurnOnCamera(size_t index)
+{
+    cameras[index]->TurnOn();
+    ActiveCams++;
+    Saved = false;
+}
+
+void Room::TurnOffCamera(size_t index)
+{
+    cameras[index]->TurnOff();
+    ActiveCams--;
+    if(ActiveCams == 1)
+    {
+        for(size_t i = 0; i < cameras.size(); i++)
+        {
+            if(cameras[i]->getTurnedOn())
+            {
+                ActiveCamIndex == i;
+            }
+        }
+    }
+    Saved = false;
+}
+
+void Room::CaptureAnimationStart()
+{
+
+    ActualAnimation = new Animation(Epsilon);
+}
+
+void Room::setPipe(bool pipe)
+{
+    std::string myfifo = "/tmp/webcamcapfifo";
+
+    if(!pipe)
+    {
+        Pipe = false;
+        ::close(fd);
+        unlink(myfifo.c_str());
+    }
+    else
+    {
+        Pipe = true;
+
+        /* create the FIFO (named pipe) */
+        mkfifo(myfifo.c_str(), 0666);
+
+        /* write "Hi" to the FIFO */
+        fd = open(myfifo.c_str(), O_WRONLY);
+        fcntl(fd,F_SETFL,0);
+    }
+}
+
+Animation *Room::CaptureAnimationStop()
+{
+    Animations.push_back(ActualAnimation);
+
+    Animation * ret = ActualAnimation;
+
+    ActualAnimation = NULL;
+
+    return ret;
+}
+
+void Room::RecordingStart()
+{
+    Record = true;
+
+    if(ActiveCams > 1)
+    {
+        Timer.start();
+
+        emit startWork();
+    }
+    else if(ActiveCams == 1)
+    {
+        Timer.start();
+
+        emit startWork2D();
+    }
+}
+
+void Room::RecordingStop()
+{
+    Record = false;
+
+    emit stopWork();
+}
+
+void Room::Save(std::ofstream &file)
+{
+    //save dimension and epsilon of room
+    file << RoomDimensions.x << " " << RoomDimensions.y << " " << Epsilon << std::endl;
+    file << cameras.size() << std::endl;
+
+    for(size_t i = 0; i < cameras.size(); i++)
+    {
+        cameras[i]->Save(file);
+    }
+
+    //set project as saved
+    Saved = true;
+}
+
+void Room::setThreshold(int value)
+{
+    for(size_t i = 0; i < cameras.size(); i++)
+    {
+        cameras[i]->setThreshold(value);
+    }
+
+    Saved = false;
+}
+
+void Room::setBrighnessOfCamera(int value)
+{
+    for(size_t i = 0; i < cameras.size(); i++)
+    {
+        cameras[i]->setBrightness(value);
+    }
+
+    Saved = false;
+}
+
+void Room::ResultReady(std::vector<Line> lines)
+{
+    waitKey(1);
+
+    QObject *obj = QObject::sender();
+
+    for(size_t i = 0; i < workers.size(); i++)
+    {
+        if(obj == workers[i])
+        {
+            if(haveResults[i])
+            {
+                std::cout << "bad sync" << std::endl;
+            }
+
+            haveResults[i] = true;
+            for(int j = 0; j < CamTopology.size(); j++)
+            {
+                if(CamTopology[j].index_a == i)
+                {
+                    CamTopology[j].a = lines;
+                }
+
+                if(CamTopology[j].index_b == i)
+                {
+                    CamTopology[j].b = lines;
+                }
+
+                Results[i] = lines;
+            }
+        }
+    }
+
+    for(size_t i = 0; i < workers.size(); i++)
+    {
+        if(!haveResults[i])
+        {
+            return;
+        }
+    }
+
+    Points.clear();
+
+    Intersections();
+
+    Opengl->setFrame(Results, Points);
+
+    if(Pipe)
+    {
+        sendMessage(Points);
+    }
+
+    std::cout << Timer.elapsed() << std::endl;
+
+    Timer.restart();
+
+    allLines.wakeAll();
+    QCoreApplication::processEvents();
+}
+
+void Room::sendMessage(std::vector<vec3> Points)
+{
+    std::stringstream ss;
+
+    ss << Points.size() << " ";
+
+    for(size_t i = 0; i < Points.size(); i++)
+    {
+        ss << "P" << Points[i];
+    }
+
+    ss << std::endl;
+
+    std::string msg = ss.str();
+
+    write(fd, msg.c_str()  , msg.size() );
+}
+
+void Room::sendMessage(std::vector<vec2> Points)
+{
+    std::stringstream ss;
+
+    ss << Points.size() << " ";
+
+    for(size_t i = 0; i < Points.size(); i++)
+    {
+        ss << "P" << Points[i];
+    }
+
+    ss << std::endl;
+
+    std::string msg = ss.str();
+
+    write(fd, msg.c_str()  , msg.size() );
+}
+
+void Room::Intersection(Edge &camsEdge)
+{
+    vec3 tempPoint;
+
+     for(size_t i = 0; i < camsEdge.a.size(); i++)
+     {
+         for(size_t j = 0; j < camsEdge.b.size(); j++)
+         {
+             tempPoint = Line::Intersection(camsEdge.a[i], camsEdge.b[j], camsEdge.Epsilon);
+
+             if(tempPoint != vec3(0,0,0))
+             {
+                camsEdge.Points.push_back(tempPoint);
+             }
+         }
+     }
+
+     camsEdge.a.clear();
+     camsEdge.b.clear();
+}
+
+void Room::Intersections()
+{
+    QtConcurrent::map(CamTopology, Room::Intersection);
+
+    for(size_t i = 0; i < CamTopology.size(); i++)
+    {
+        Points.insert(Points.end(), CamTopology[i].Points.begin(), CamTopology[i].Points.end());
+        CamTopology[i].Points.clear();
+    }
+
+    for(size_t i = 0; i < workers.size(); i++)
+    {
+        haveResults[i] = false;
+    }
+}
+
+void Room::record2D()
+{
+    while(Record)
+    {
+        points2D = cameras[ActiveCamIndex]->RecordNextFrame2D();
+        QCoreApplication::processEvents();
+    }
+}

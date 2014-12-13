@@ -1,0 +1,115 @@
+#ifndef CAPTURECAMERA_H
+#define CAPTURECAMERA_H
+
+#include <fstream>
+
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/opencv.hpp>
+
+#include "line.h"
+#include "Gui/camwidget.h"
+
+using namespace glm;
+using namespace cv;
+
+class CaptureCamera: public QObject
+{
+    Q_OBJECT
+
+    typedef std::vector<Point> Contour;
+
+    //BASIC PARAMETERS
+    int Video_usb_ID;
+    std::string Name;
+
+    //width, length
+    vec3 RoomDimensions;
+
+    vec3 Position;
+    vec3 DirectionVectorToMiddle;
+
+    bool TurnedOn;
+    bool ShowWindow;
+
+    float AngleOfView;
+    double AnglePerPixel;
+
+    //ADVANCED for camera
+    VideoCapture Camera;
+    Mat FrameBackground ,Frame, FrameTemp, MOGMask;
+
+    //background substract
+    bool UseBackgroundSub;
+    BackgroundSubtractorMOG* BackgroundExtractor;
+
+    //ADVANCED for image process
+    size_t ThresholdValue;
+    Mat DilateKernel;
+
+    Scalar ContourColor;
+    std::vector <Contour> Contours;
+
+    Moments CenterMoment;
+    vec2 CenterTemp;
+    vec2 CenterRelativeTemp;
+    std::vector<vec2> CenterOfContour;
+
+    vec3 DirectionTemp;
+    std::vector<Line> Lines;
+
+    CamWidget * QtWidgetViewer;
+public:
+    //public parameters
+    vec2 resolution;
+
+    //public functions
+    CaptureCamera(vec3 pos, vec3 roomDimensions, std::string name, int ID, float angle);
+
+    ~CaptureCamera();
+
+    std::vector<Line> RecordNextFrame();
+    std::vector<glm::vec2> RecordNextFrame2D();
+    void TurnOn();
+    void TurnOff();
+    void Show();
+    void Hide();
+    void Save(std::ofstream &outputFile);
+    void CalibNoMarkers();
+    void CalibWithMarkers();
+
+    void setDimensions(vec3 roomDim){RoomDimensions = roomDim; ComputeDirVector();}
+    void setWidth(int  width){RoomDimensions.x = width; ComputeDirVector();}
+    void setLength(int length){RoomDimensions.y = length; ComputeDirVector();}
+    void setThreshold(size_t Threshold){ThresholdValue = Threshold;}
+    void setAngle(float Angle){AngleOfView = Angle; AnglePerPixel = 0;}
+
+    void setContrast(int value);
+    void setBrightness(int value);
+    void setSaturation(int value);
+    void setSharpness(int value);
+
+    std::string getName() const {return Name;}
+    vec3 getPosition() const {return Position;}
+    vec3 getDirVector() const {return DirectionVectorToMiddle;}
+    int getID() const {return Video_usb_ID;}
+    float getAngle() const {return AngleOfView;}
+    bool getTurnedOn() const {return TurnedOn;}
+    CamWidget *getWidget() const {return QtWidgetViewer;}
+
+
+    static cv::Mat myColorThreshold(Mat input, Mat dilateKernel, int thresholdValue, int maxValue);
+
+private:
+
+    vec2 GetUndisortedPosition(vec2 frameResolution, vec2 position);
+    void UseFilter();
+    void MiddleOfContours();
+    void CreateLines();
+    void ComputeDirVector();
+
+signals:
+    void imageRead(cv::Mat image);
+
+};
+
+#endif // CAPTURECAMERA_H

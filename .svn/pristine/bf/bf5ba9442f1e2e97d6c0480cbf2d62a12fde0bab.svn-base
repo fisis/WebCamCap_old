@@ -1,0 +1,19 @@
+#include "TBBClasses.h"
+
+ParallelCamera::ParallelCamera(std::vector <CaptureCamera*> cams,
+                               std::vector<std::vector<Line> > *lines,
+                               std::vector<std::vector<Line> > *lines_copy)
+{
+    cameras = cams;
+    Lines = lines;
+    Lines_copy = lines_copy;
+}
+
+void ParallelCamera::operator ()(const cv::Range &range) const
+{
+    for (int i = range.start; i < range.end; ++i)
+    {
+        *(Lines->begin()+i) = cameras[i]->RecordNextFrame();
+        Lines_copy[i] = Lines[i];
+    }
+}

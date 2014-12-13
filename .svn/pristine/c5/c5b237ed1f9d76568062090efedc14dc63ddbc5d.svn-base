@@ -1,0 +1,22 @@
+#ifndef TBBCLASSES_H
+#define TBBCLASSES_H
+
+#include <opencv2/opencv.hpp>
+#include "capturecamera.h"
+
+
+class ParallelCamera : public cv::ParallelLoopBody
+{
+    std::vector <CaptureCamera*> cameras;
+    std::vector<std::vector<Line> > *Lines;
+    std::vector<std::vector<Line> > *Lines_copy;
+public:
+
+    ParallelCamera(std::vector <CaptureCamera*> cams,
+                   std::vector<std::vector<Line> > *lines,
+                   std::vector<std::vector<Line> > *lines_copy);
+
+    void operator ()(const cv::Range& range) const;
+};
+
+#endif // TBBCLASSES_H

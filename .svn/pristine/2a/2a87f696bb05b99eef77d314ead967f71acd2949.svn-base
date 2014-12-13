@@ -1,0 +1,48 @@
+#include "capturethread.h"
+
+worker::worker(QWaitCondition *q, CaptureCamera *cam, QObject *parent) :
+  QObject(parent)
+{
+    Running = false;
+    line = q;
+    Cam = cam;
+}
+
+void worker::do_Work()
+{
+  forever
+  {
+      mutex.lock();
+      if (!Running)
+      {
+          mutex.unlock();
+          break;
+      }
+
+      Result = Cam->RecordNextFrame();
+
+      emit ResultReady(Result);
+
+      if(!line->wait(&mutex,1000))
+      {
+         qDebug() << "signal lost";
+      }
+      mutex.unlock();
+
+      QCoreApplication::processEvents();
+  }
+
+  qDebug() << "Stopping capture thread";
+}
+
+void worker::StopWork()
+{
+    QMutexLocker l(&mutex);
+    Running = false;
+}
+
+void worker::StartWork()
+{
+    Running = true;
+    do_Work();
+}

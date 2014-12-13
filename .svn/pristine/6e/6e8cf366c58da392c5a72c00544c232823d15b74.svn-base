@@ -1,0 +1,125 @@
+#ifndef Room_H
+#define Room_H
+
+#include <QTime>
+
+#include "animation.h"
+#include "modelstructure.h"
+#include "capturethread.h"
+
+using namespace glm;
+
+typedef struct Edge
+{
+    Edge(int a, int b, float Eps): index_a(a), index_b(b), Epsilon(Eps) {}
+
+    int index_a, index_b;
+    std::vector<Line> a;
+    std::vector<Line> b;
+    float Epsilon;
+    std::vector <vec3> Points;
+} Edge;
+
+class Room : public QObject
+{
+    Q_OBJECT
+
+    //basic parameters for project
+    std::string Name;
+    vec3 RoomDimensions; //centimeters
+    double Epsilon;
+    bool Saved;
+    OpenGLWindow *Opengl;
+
+    ModelStructure *Structure;
+    std::vector <Edge> CamTopology;
+    std::vector <CaptureCamera*> cameras;
+
+    std::vector<vec3> Points;
+
+    size_t ActiveCams;
+    size_t ActiveCamIndex;
+
+    bool Record, CaptureAnimation;
+    Animation* ActualAnimation;
+    std::vector<Animation*> Animations;
+
+    bool Pipe;
+    int fd;
+
+    //parallel
+    QWaitCondition allLines;
+
+    //cams
+    std::vector <bool> haveResults;
+    std::vector <std::vector<Line> > Results;
+
+    std::vector <worker*> workers;
+    std::vector <QThread*> workerthreads;
+
+    //intersections
+    QTime Timer;
+
+    //2Drecording
+    std::vector<glm::vec2> points2D;
+
+
+public:
+    Room(OpenGLWindow *opengl = NULL, vec3 dimensions = vec3(0.0f,0.0f, 0.0f), float eps = 0.5, std::string name = "Default Project");
+    Room(std::string file);
+    ~Room();
+
+    void AddCamera(vec3 pos, std::string name, int ID,int angle);
+    void AddCamera(CaptureCamera *cam);
+    void RemoveCamera(size_t index);
+    void MakeTopology();
+    void Save(std::ofstream &file);
+
+    void TurnOnCamera(size_t index);
+    void TurnOffCamera(size_t index);
+    void ShowCameraVideo(size_t index){cameras[index]->Show();}
+    void HideCameraVideo(size_t index){cameras[index]->Hide();}
+
+    void CaptureAnimationStart();
+    void setPipe(bool pipe);
+    Animation *CaptureAnimationStop();
+    void RecordingStart();
+    void RecordingStop();
+
+    void setDimensions(vec3 dims);
+    void setName(std::string name){this->Name = name;}
+    void setEpsilon(float size);
+
+    ModelStructure* getStructure() const {return Structure;}
+    std::string getName() const {return Name;}
+    vec3 getDimensions() const {return RoomDimensions;}
+    int getWidth()const {return RoomDimensions.x;}
+    int getLength()const {return RoomDimensions.y;}
+    float getEpsilon() const {return Epsilon;}
+    bool getSaved() const {return Saved;}
+    std::vector<std::vector<Line> > getLines() const {return Results;}
+    std::vector <CaptureCamera*> getcameras()const {return cameras;}
+
+    void setOpenglWindow(OpenGLWindow * opengl) {Opengl = opengl;}
+    void setStructure(ModelStructure* struc) {Structure = struc;}
+    void setThreshold(int value);
+    void setBrighnessOfCamera(int value);
+
+signals:
+    void startWork();
+    void stopWork();
+    void startWork2D();
+
+private slots:
+    void ResultReady(std::vector<Line> lines);
+    void record2D();
+
+private:
+    void sendMessage(std::vector<vec3> Points);
+    void sendMessage(std::vector<vec2> Points);
+    static void Intersection(Edge &camsEdge);
+    void Intersections();
+
+};
+
+#endif // Room_H

@@ -1,0 +1,99 @@
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
+
+#include "Gui/addproject.h"
+#include "Gui/addcamera.h"
+
+#include <QMainWindow>
+#include <QMessageBox>
+#include <QDesktopWidget>
+#include <QCloseEvent>
+
+#include <QKeyEvent>
+
+namespace Ui {
+class MainWindow;
+}
+
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
+
+    int index = 0;
+
+    bool CaptureAnimation;
+    bool Record;
+    Room *Project;
+
+    std::vector<std::vector<Line> > Lines;
+    std::vector<vec3> Points;
+
+    std::string LogDestinationFolder;
+    std::vector<std::string> RecentProjects;
+    QList <QAction*> RecentProjectsQActions;
+
+    QIcon PlayIcon, EditIcon, SaveIcon;
+protected:
+    void closeEvent(QCloseEvent *event);
+
+public:
+    void keyPressEvent(QKeyEvent* e);
+    void keyReleaseEvent(QKeyEvent* e);
+    explicit MainWindow(QWidget *parent = 0);
+    ~MainWindow();
+
+    std::string operator<<(QString& string) {
+        return string.toStdString();
+    }
+
+private slots:
+
+    void on_newProject_triggered();
+
+    void OpenRecentProjects();
+
+    void on_openProject_triggered();
+
+    void on_editProject_triggered();
+
+    void on_saveProject_triggered();
+
+    void on_nahravanie_clicked(bool checked);
+
+    void on_playButton_pressed();
+
+    void on_stopButton_pressed();
+
+    void on_AnimationsTable_cellChanged(int row, int column);
+
+    void on_AnimationsTable_cellClicked(int row, int column);
+
+    void on_AddStructure_clicked();
+
+    void on_LinesCheck_stateChanged(int arg1);
+
+    void on_JointsCheck_stateChanged(int arg1);
+
+    void on_BonesCheck_stateChanged(int arg1);
+
+    void on_LivePipe_stateChanged(int arg1);
+
+private:
+    void on_Threshold_valueChanged(int value);
+
+    void on_brightness_valueChanged(int value);
+
+
+    void createRollOutMenu();
+    bool searchForRecentProjects(std::string filestring);
+    void saveLog();
+    void loadLog();
+    void setProjectStats();
+    int NotSavedMessage();
+    void addCamToTable(CaptureCamera * temp);
+
+
+    Ui::MainWindow *ui;
+};
+
+#endif // MAINWINDOW_H

@@ -1,0 +1,57 @@
+#-------------------------------------------------
+#
+# Project created by QtCreator 2014-04-11T21:13:17
+#
+#-------------------------------------------------
+
+QT += core gui opengl testlib
+
+LIBS += -lglut
+
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+TARGET = MotionCapture
+TEMPLATE = app
+
+CONFIG += link_pkgconfig
+
+PKGCONFIG += opencv gl glu
+
+SOURCES += main.cpp\
+    room.cpp \
+    capturecamera.cpp \
+    line.cpp \
+    markerpoint.cpp \
+    modelstructure.cpp \
+    openglwindow.cpp \
+    animation.cpp \
+    frame.cpp \
+    Gui/structureeditor.cpp \
+    Gui/addcamera.cpp \
+    Gui/addproject.cpp \
+    Gui/mainwindow.cpp \
+    Gui/animplayer.cpp \
+    TBBClasses.cpp
+
+HEADERS  += room.h \
+    capturecamera.h \
+    line.h \
+    markerpoint.h \
+    modelstructure.h \
+    openglwindow.h \
+    animation.h \
+    frame.h \
+    Gui/structureeditor.h \
+    Gui/addcamera.h \
+    Gui/addproject.h \
+    Gui/mainwindow.h \
+    Gui/animplayer.h \
+    TBBClasses.h
+
+FORMS    += Gui/structureeditor.ui \
+    Gui/addcamera.ui \
+    Gui/addproject.ui \
+    Gui/mainwindow.ui \
+    Gui/animplayer.ui
+
+QMAKE_CXXFLAGS += -std=c++11 -pedantic -Wall -Wextra
