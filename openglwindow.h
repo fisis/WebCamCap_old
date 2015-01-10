@@ -24,7 +24,7 @@
 #define OPENGLWINDOW_H
 
 #include <QCloseEvent>
-#include <QGLWidget>
+#include <QtOpenGL/QGLWidget>
 
 #include "line.h"
 

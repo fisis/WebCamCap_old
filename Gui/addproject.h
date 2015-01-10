@@ -23,11 +23,11 @@
 #ifndef ADDPROJECT_H
 #define ADDPROJECT_H
 
-#include <QDialog>
+#include <QtWidgets/QDialog>
 
-#include "room.h"
+#include "../room.h"
 #include "addcamera.h"
-#include "Gui/structureeditor.h"
+#include "structureeditor.h"
 
 namespace Ui {
 class AddProject;

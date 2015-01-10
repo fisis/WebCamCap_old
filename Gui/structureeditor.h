@@ -25,7 +25,7 @@
 
 #include <QDialog>
 
-#include "modelstructure.h"
+#include "../modelstructure.h"
 
 namespace Ui {
 class StructureEditor;

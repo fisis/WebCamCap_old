@@ -20,7 +20,7 @@
  *
  */
 
-#include "Gui/camwidget.h"
+#include "camwidget.h"
 #include "ui_camwidget.h"
 
 CQtOpenCVViewerGl::CQtOpenCVViewerGl(QWidget *parent) :
@@ -136,6 +136,8 @@ void CQtOpenCVViewerGl::renderImage()
 
             glRasterPos2i( mPosX, mPosY );
             // <--- Centering image in draw area
+
+            image = image.mirrored(true,false);
 
             imW = image.width();
             imH = image.height();

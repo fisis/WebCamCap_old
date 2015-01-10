@@ -23,8 +23,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "Gui/addproject.h"
-#include "Gui/addcamera.h"
+#include "addproject.h"
+#include "addcamera.h"
 
 #include <QMainWindow>
 #include <QMessageBox>

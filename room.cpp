@@ -22,7 +22,7 @@
 
 #include "room.h"
 #include <QApplication>
-#include <QtConcurrent>
+#include <QtConcurrent/QtConcurrent>
 
 Room::Room(OpenGLWindow *opengl, vec3 dimensions, float eps, std::string name)
 {
@@ -326,6 +326,7 @@ void Room::setPipe(bool pipe)
         {
             std::cout << "Server down somehow!" << std::endl;
             Pipe = false;
+            return;
         }
         connect(server, SIGNAL(newConnection()), this, SLOT(handleConnection()));
 

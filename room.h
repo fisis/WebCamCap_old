@@ -24,9 +24,9 @@
 #define Room_H
 
 #include <QTime>
-#include <QLocalServer>
-#include <QLocalSocket>
-#include <QtNetwork>
+#include <QtNetwork/QLocalServer>
+#include <QtNetwork/QLocalSocket>
+
 
 #include "animation.h"
 #include "modelstructure.h"

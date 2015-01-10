@@ -26,7 +26,7 @@
 #include <QDialog>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "capturecamera.h"
+#include "../capturecamera.h"
 
 namespace Ui {
 class AddCamera;

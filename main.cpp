@@ -20,9 +20,26 @@
  *
  */
 
-#include <QApplication>
+#include <QtWidgets/QApplication>
 #include "Gui/mainwindow.h"
 #include <GL/glut.h>
+#include <signal.h>
+
+QCoreApplication *app;
+
+bool clean = false;
+
+void cleanup(int)
+{
+    std::cout << "received signal, i can quuuuit!" << std::endl;
+    app->quit();
+    clean = true;
+
+    if(clean)
+    {
+        exit(1);
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -33,8 +50,13 @@ int main(int argc, char *argv[])
     qRegisterMetaType<cv::Mat >("cv::Mat");
 
     QApplication a(argc, argv);
+    app = &a;
+
     MainWindow w;
     w.show();
+
+    signal(SIGINT, cleanup);
+    signal(SIGSEGV, cleanup);
 
     return a.exec();
 }

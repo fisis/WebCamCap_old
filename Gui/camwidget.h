@@ -24,7 +24,7 @@
 #define CAMWIDGET_H
 
 #include <QWidget>
-#include <QGLWidget>
+#include <QtOpenGL/QGLWidget>
 #include <opencv2/core/core.hpp>
 
 class CQtOpenCVViewerGl : public QGLWidget
