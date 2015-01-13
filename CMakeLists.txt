@@ -23,7 +23,9 @@ set(CMAKE_AUTOMOC ON)
 set(HW_GUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Gui)
 subdirs(Gui)
 
-include_directories(QT_INCLUDE_DIR ${HW_GUI_DIR} ${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS})
+FIND_PATH(INC_GLM "glm/glm.hpp")
+
+include_directories(QT_INCLUDE_DIR ${HW_GUI_DIR} ${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS} INCLUDE_DIRECTORIES(${INC_GLM}))
 
 FIND_PACKAGE(Qt5Core)
 FIND_PACKAGE(Qt5Widgets)
@@ -35,9 +37,11 @@ FIND_PACKAGE(OpenCV REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 
-file(GLOB_RECURSE SRC
+file(GLOB SRC
     "*.h"
     "*.cpp"
+    "Gui/*.h"
+    "Gui/*.cpp"
 )
 
 QT5_WRAP_UI(UIS
@@ -60,6 +64,13 @@ QT5_WRAP_CPP(CPPS
 )
 
 ADD_EXECUTABLE(${PROJECT_NAME} main.cpp ${SRC} ${UIS})
+
+# Old Interfaces:
+ set_property(TARGET ${PROJECT_NAME}
+    APPEND PROPERTY COMPILE_DEFINITIONS_DEBUG DEBUG_MODE )
+
+ set_property(DIRECTORY
+    APPEND PROPERTY COMPILE_DEFINITIONS_DEBUG DIR_DEBUG_MODE )
 
 qt5_use_modules(${PROJECT_NAME} Widgets Core Gui OpenGL Concurrent Network)
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})

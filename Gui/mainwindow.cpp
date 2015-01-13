@@ -46,6 +46,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QIcon edit(QDir::currentPath() + "/Pictures/EditIcon.png");
     QIcon save(QDir::currentPath() + "/Pictures/SaveIcon.png");
 
+    index = 0;
+
     playIcon = play;
     editIcon = edit;
     saveIcon = save;

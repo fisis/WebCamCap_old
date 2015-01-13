@@ -41,7 +41,7 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
-    int index = 0;
+    int index;
 
     bool captureAnimation;
     bool record;
