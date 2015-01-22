@@ -45,8 +45,8 @@ int main(int argc, char *argv[])
 {
     glutInit(&argc, argv);
     qRegisterMetaType<std::vector<Line> >("std::vector<Line>");
-    qRegisterMetaType<std::vector<vec3> >("std::vector<vec3>");
-    qRegisterMetaType<std::vector<vec2> >("std::vector<vec2>");
+    qRegisterMetaType<std::vector<glm::vec3> >("std::vector<glm::vec3>");
+    qRegisterMetaType<std::vector<glm::vec2> >("std::vector<glm::vec2>");
     qRegisterMetaType<cv::Mat >("cv::Mat");
 
     QApplication a(argc, argv);

@@ -29,6 +29,8 @@
 
 #include <QMessageBox>
 
+using namespace glm;
+
 AddProject::AddProject(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AddProject)

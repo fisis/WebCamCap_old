@@ -22,6 +22,8 @@
 
 #include "animation.h"
 
+using namespace glm;
+
 Animation::Animation(float Epsilon, std::string name, ModelStructure *struc)
 {
     roomEpsilon = Epsilon;

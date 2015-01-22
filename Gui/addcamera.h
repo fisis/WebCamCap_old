@@ -37,13 +37,13 @@ class AddCamera : public QDialog
     Q_OBJECT
 
     CaptureCamera *cam;
-    VideoCapture temp;
+    cv::VideoCapture temp;
     glm::vec3 roomDims;
-    Mat frame, mask;
+    cv::Mat frame, mask;
     bool record, warning;
 
 public:
-    explicit AddCamera(QWidget *parent = 0, vec3 roomDims = vec3(0.0f,0.0f, 0.0f));
+    explicit AddCamera(QWidget *parent = 0, glm::vec3 roomDims = glm::vec3(0.0f,0.0f, 0.0f));
     ~AddCamera();
 
     CaptureCamera* getCam() const {return cam;}

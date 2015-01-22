@@ -27,24 +27,22 @@
 
 #include "line.h"
 
-using namespace glm;
-
 class Frame
 {
     int elapsedTime;
 
-    std::vector<vec3> points;
+    std::vector<glm::vec3> points;
     std::vector<std::vector<Line> > lines;
     std::vector<Line> bones;
 
 public:
-    Frame(std::vector<vec3> pts, std::vector<std::vector<Line> > lines, int elapsed);
+    Frame(std::vector<glm::vec3> pts, std::vector<std::vector<Line> > lines, int elapsed);
 
-    std::vector<vec3> getPoints() const {return points;}
+    std::vector<glm::vec3> getPoints() const {return points;}
     std::vector<std::vector<Line> > getLines() const {return lines;}
     int getElapsedTime() const {return elapsedTime;}
 
-    void setPoints(std::vector<vec3> pts) {points = pts;}
+    void setPoints(std::vector<glm::vec3> pts) {points = pts;}
 };
 
 #endif // FRAME_H

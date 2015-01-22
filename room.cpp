@@ -24,6 +24,9 @@
 #include <QApplication>
 #include <QtConcurrent/QtConcurrent>
 
+using namespace glm;
+using namespace cv;
+
 Room::Room(OpenGLWindow *opengl, vec3 dimensions, float eps, std::string name)
 {
     if(dimensions == vec3(0.0f, 0.0f, 0.0f) && eps == 0.5 &&  name == "Default Project")

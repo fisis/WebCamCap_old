@@ -33,9 +33,6 @@
 #include <QTime>
 #include <QApplication>
 
-
-using namespace glm;
-
 class worker : public QObject
 {
   Q_OBJECT

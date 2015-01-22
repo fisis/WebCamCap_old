@@ -22,7 +22,7 @@
 
 #include "frame.h"
 
-Frame::Frame(std::vector<vec3> pts, std::vector<std::vector<Line> > lines, int elapsed)
+Frame::Frame(std::vector<glm::vec3> pts, std::vector<std::vector<Line> > lines, int elapsed)
 {
     points = pts;
     lines = lines;

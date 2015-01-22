@@ -22,6 +22,8 @@
 
 #include "capturethread.h"
 
+using namespace glm;
+
 worker::worker(QWaitCondition *q, CaptureCamera *cam, QObject *parent) :
   QObject(parent)
 {

@@ -32,8 +32,6 @@
 #include "modelstructure.h"
 #include "capturethread.h"
 
-using namespace glm;
-
 typedef struct Edge
 {
     Edge(int a, int b, float Eps): index_a(a), index_b(b), epsilon(Eps) {}
@@ -42,7 +40,7 @@ typedef struct Edge
     std::vector<Line> a;
     std::vector<Line> b;
     float epsilon;
-    std::vector <vec3> points;
+    std::vector <glm::vec3> points;
 } Edge;
 
 class Room : public QObject
@@ -51,7 +49,7 @@ class Room : public QObject
 
     //basic parameters for project
     std::string name;
-    vec3 roomDimensions; //centimeters
+    glm::vec3 roomDimensions; //centimeters
     double epsilon;
     bool saved;
     OpenGLWindow *opengl;
@@ -85,16 +83,16 @@ class Room : public QObject
     //intersections
     QTime timer;
 
-    std::vector<vec3> points;
+    std::vector<glm::vec3> points;
     std::vector<glm::vec2> points2D; //2Drecording
 
 
 public:
-    Room(OpenGLWindow *opengl = nullptr, vec3 dimensions = vec3(0.0f,0.0f, 0.0f), float eps = 0.5, std::string name = "Default Project");
+    Room(OpenGLWindow *opengl = nullptr, glm::vec3 dimensions = glm::vec3(0.0f,0.0f, 0.0f), float eps = 0.5, std::string name = "Default Project");
     Room(std::string file);
     ~Room();
 
-    void AddCamera(vec3 pos, std::string name, int ID,int angle);
+    void AddCamera(glm::vec3 pos, std::string name, int ID,int angle);
     void AddCamera(CaptureCamera *cam);
     void RemoveCamera(size_t index);
     void MakeTopology();
@@ -111,13 +109,13 @@ public:
     void RecordingStart();
     void RecordingStop();
 
-    void setDimensions(vec3 dims);
+    void setDimensions(glm::vec3 dims);
     void setName(std::string name){this->name = name;}
     void setEpsilon(float size);
 
     ModelStructure* getStructure() const {return structure;}
     std::string getName() const {return name;}
-    vec3 getDimensions() const {return roomDimensions;}
+    glm::vec3 getDimensions() const {return roomDimensions;}
     int getWidth()const {return roomDimensions.x;}
     int getLength()const {return roomDimensions.y;}
     float getEpsilon() const {return epsilon;}
@@ -141,8 +139,8 @@ private slots:
     void handleConnection();
 
 private:
-    void sendMessage(std::vector<vec3> points);
-    void sendMessage(std::vector<vec2> points);
+    void sendMessage(std::vector<glm::vec3> points);
+    void sendMessage(std::vector<glm::vec2> points);
     void sendMessage(std::string str);
     static void Intersection(Edge &camsEdge);
     void Intersections();

@@ -48,7 +48,7 @@ class MainWindow : public QMainWindow
     Room *project;
 
     std::vector<std::vector<Line> > lines;
-    std::vector<vec3> points;
+    std::vector<glm::vec3> points;
 
     std::string logDestinationFolder;
     std::vector<std::string> recentProjects;

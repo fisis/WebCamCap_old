@@ -24,6 +24,8 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/compatibility.hpp>
 
+using namespace glm;
+
 Line::Line(vec3 pos, vec3 vec)
 {
     found = false;

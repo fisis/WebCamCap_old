@@ -20,10 +20,14 @@
  *
  */
 
+
 #include "addcamera.h"
 #include "ui_addcamera.h"
 
 #include <QMessageBox>
+
+using namespace glm;
+using namespace cv;
 
 AddCamera::AddCamera(QWidget *parent, vec3 roomDims) :
     QDialog(parent),

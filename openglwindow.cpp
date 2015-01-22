@@ -27,6 +27,8 @@
 
 #include <QDir>
 
+using namespace glm;
+
 OpenGLWindow::OpenGLWindow(QWidget *parent) : QGLWidget(parent)
 {
     zoom = 1.0f;

@@ -41,7 +41,7 @@ public:
     Animation(float Epsilon, std::string name = "Animation_def" , ModelStructure *struc = nullptr);
 
     void AddFrame(Frame k);
-    void AddFrame(std::vector<vec3> pts, std::vector<std::vector<Line> > lines, int elapsed);
+    void AddFrame(std::vector<glm::vec3> pts, std::vector<std::vector<Line> > lines, int elapsed);
     void Save(ExportFormat format, std::string file);
     void PostProcess();
 

@@ -29,8 +29,6 @@
 
 #include <QTreeWidget>
 
-using namespace glm;
-
 enum ExportFormat
 {
     BVH,
@@ -43,7 +41,7 @@ class MarkerPoint
 {
     int Id;
     std::string name;
-    vec3 offsetFromRoot;
+    glm::vec3 offsetFromRoot;
 
     MarkerPoint* parent;
 
@@ -51,20 +49,20 @@ class MarkerPoint
     std::vector<float> distances;
 public:
     MarkerPoint(QTreeWidgetItem *item, MarkerPoint *parent);
-    MarkerPoint(vec3 offset, std::string name, MarkerPoint* parent = nullptr, int Id = -1);
+    MarkerPoint(glm::vec3 offset, std::string name, MarkerPoint* parent = nullptr, int Id = -1);
 
     void AddChild(MarkerPoint *child);
     void SaveHierarchy(ExportFormat format, std::ofstream &outputFile);
     void SaveMotion(ExportFormat format,  std::ofstream &outputFile);
 
-    vec3 getOffset() const {return offsetFromRoot;}
+    glm::vec3 getOffset() const {return offsetFromRoot;}
     int getID() const {return Id;}
     std::vector<float> getDistances() const {return distances;}
 
     void setID(int id) {Id = id;}
 
-    static float PointDistance(vec3 point1, vec3 point2);
-    static float PointDistance(vec2 point1, vec2 point2);
+    static float PointDistance(glm::vec3 point1, glm::vec3 point2);
+    static float PointDistance(glm::vec2 point1, glm::vec2 point2);
 private:
 
 };

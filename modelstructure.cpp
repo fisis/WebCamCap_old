@@ -22,6 +22,8 @@
 
 #include "modelstructure.h"
 
+using namespace glm;
+
 ModelStructure::ModelStructure()
 {
     epsilon = 5;

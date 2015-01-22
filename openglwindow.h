@@ -28,30 +28,28 @@
 
 #include "line.h"
 
-using namespace glm;
-
 class OpenGLWindow : public QGLWidget
 {
     Q_OBJECT
 
     //paint props
     bool mdrawJoints, mdrawLines, mdrawBones;
-    vec3 camRot;
+    glm::vec3 camRot;
     float zoom;
 
     //Room props
-    vec3 roomDims;
+    glm::vec3 roomDims;
     QImage texture;
     unsigned int texId;
 
     //Structure
     std::vector<std::vector<Line> > lines;
     std::vector<Line > bones;
-    std::vector<vec3> joints;
+    std::vector<glm::vec3> joints;
 
     //mouse tracking
     bool leftButton;
-    vec2 lastMousePos, currentMousePos;
+    glm::vec2 lastMousePos, currentMousePos;
 
 public:
     explicit OpenGLWindow(QWidget *parent = 0);
@@ -60,11 +58,11 @@ public:
     void paintGL();
     void resizeGL(int w, int h);
 
-    void setRoomDims(vec3 dims);
+    void setRoomDims(glm::vec3 dims);
     void setDrawJoints(bool draw){mdrawJoints = draw;}
     void setDrawLines(bool draw){mdrawLines = draw;}
     void setDrawBones(bool draw){mdrawBones = draw;}
-    void setFrame(std::vector<std::vector<Line> > lns = std::vector<std::vector<Line> >(), std::vector<vec3> pts = std::vector<vec3>(), std::vector<Line> bns = std::vector<Line>());
+    void setFrame(std::vector<std::vector<Line> > lns = std::vector<std::vector<Line> >(), std::vector<glm::vec3> pts = std::vector<glm::vec3>(), std::vector<Line> bns = std::vector<Line>());
 signals:
 
 public slots:

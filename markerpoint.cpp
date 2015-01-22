@@ -22,6 +22,8 @@
 
 #include "markerpoint.h"
 
+using namespace glm;
+
 MarkerPoint::MarkerPoint(QTreeWidgetItem *item, MarkerPoint *parent)
 {
     vec3 offset = vec3( item->text(1).toFloat(), item->text(2).toFloat(), item->text(3).toFloat());

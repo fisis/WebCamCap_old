@@ -31,23 +31,20 @@
 #include "line.h"
 #include "Gui/camwidget.h"
 
-using namespace glm;
-using namespace cv;
-
 class CaptureCamera: public QObject
 {
     Q_OBJECT
 
-    typedef std::vector<Point> Contour;
+    typedef std::vector<cv::Point> Contour;
 
     //BASIC PARAMETERS
     int videoUsbId;
     std::string name;
 
     //width, length
-    vec3 roomDimensions;
-    vec3 position;
-    vec3 directionVectorToMiddle;
+    glm::vec3 roomDimensions;
+    glm::vec3 position;
+    glm::vec3 directionVectorToMiddle;
 
     bool turnedOn;
     bool showWindow;
@@ -56,37 +53,37 @@ class CaptureCamera: public QObject
     double anglePerPixel;
 
     //ADVANCED for camera
-    VideoCapture camera;
+    cv::VideoCapture camera;
     bool ROI;
-    Mat ROIMask;
-    Mat frameBackground ,frame, frameTemp, MOGMask;
+    cv::Mat ROIMask;
+    cv::Mat frameBackground ,frame, frameTemp, MOGMask;
 
     //background substract
     bool useBackgroundSub;
-    BackgroundSubtractorMOG* backgroundExtractor;
+    cv::BackgroundSubtractorMOG* backgroundExtractor;
 
     //ADVANCED for image process
     size_t thresholdValue;
-    Mat dilateKernel;
+    cv::Mat dilateKernel;
 
-    Scalar contourColor;
+    cv::Scalar contourColor;
     std::vector <Contour> contours;
 
-    Moments centerMoment;
-    vec2 centerTemp;
-    vec2 centerRelativeTemp;
-    std::vector<vec2> centerOfContour;
+    cv::Moments centerMoment;
+    glm::vec2 centerTemp;
+    glm::vec2 centerRelativeTemp;
+    std::vector<glm::vec2> centerOfContour;
 
-    vec3 directionTemp;
+    glm::vec3 directionTemp;
     std::vector<Line> lines;
 
     CamWidget * QtWidgetViewer;
 public:
     //public parameters
-    vec2 resolution;
+    glm::vec2 resolution;
 
     //public functions
-    CaptureCamera(vec3 pos, vec3 roomDimensions, std::string name, int ID, float angle, bool backgroudSubstractor = false);
+    CaptureCamera(glm::vec3 pos, glm::vec3 roomDimensions, std::string name, int ID, float angle, bool backgroudSubstractor = false);
 
     ~CaptureCamera();
 
@@ -101,7 +98,7 @@ public:
     int CalibWithMarkers(int numOfMarkers);
     void setROI(cv::Mat roi){ROIMask = roi; ROI = true;}
 
-    void setDimensions(vec3 roomDim){roomDimensions = roomDim; ComputeDirVector();}
+    void setDimensions(glm::vec3 roomDim){roomDimensions = roomDim; ComputeDirVector();}
     void setWidth(int  width){roomDimensions.x = width; ComputeDirVector();}
     void setLength(int length){roomDimensions.y = length; ComputeDirVector();}
     void setThreshold(size_t Threshold){thresholdValue = Threshold;}
@@ -113,15 +110,15 @@ public:
     void setSharpness(int value);
 
     std::string getName() const {return name;}
-    vec3 getPosition() const {return position;}
-    vec3 getDirVector() const {return directionVectorToMiddle;}
+    glm::vec3 getPosition() const {return position;}
+    glm::vec3 getDirVector() const {return directionVectorToMiddle;}
     int getID() const {return videoUsbId;}
     float getAngle() const {return angleOfView;}
     bool getTurnedOn() const {return turnedOn;}
     CamWidget *getWidget() const {return QtWidgetViewer;}
 
 
-    static cv::Mat myColorThreshold(Mat input, Mat dilateKernel, int thresholdValue, int maxValue);
+    static cv::Mat myColorThreshold(cv::Mat input, cv::Mat dilateKernel, int thresholdValue, int maxValue);
 
 public slots:
     void activeCam(bool active);
@@ -132,7 +129,7 @@ public slots:
 
 private:
 
-    vec2 GetUndisortedPosition(vec2 frameResolution, vec2 position);
+    glm::vec2 GetUndisortedPosition(glm::vec2 frameResolution, glm::vec2 position);
     void UseFilter();
     void MiddleOfContours();
     void CreateLines();

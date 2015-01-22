@@ -29,36 +29,34 @@
 #include <glm/glm.hpp>
 #include <glm/vec3.hpp>
 
-using namespace glm;
-
 class Line
 {
 public:
     bool found;
-    vec3 position;
-    vec3 directionVector;
+    glm::vec3 position;
+    glm::vec3 directionVector;
 
     size_t intersections;
 
-    Line(vec3 pos, vec3 vec);
+    Line(glm::vec3 pos, glm::vec3 vec);
 
     bool getFound() const {return found;}
 
     void setFound(bool F) {found = F;}
 
-    static void ClosestPointsOnTwoLines(Line l1, Line l2, vec3 &closestPointLine1, vec3 &closestPointLine2);
-    static vec3 IntersectionLinePlane(Line l1, Line Plane);
-    static float DistanceTwoPoints(vec3 point1, vec3 point2);
-    static float DistancePointPlane(vec3 point, Line Plane);
-    static vec3 AveragePoint(vec3 point1, vec3 point2);
+    static void ClosestPointsOnTwoLines(Line l1, Line l2, glm::vec3 &closestPointLine1, glm::vec3 &closestPointLine2);
+    static glm::vec3 IntersectionLinePlane(Line l1, Line Plane);
+    static float DistanceTwoPoints(glm::vec3 point1, glm::vec3 point2);
+    static float DistancePointPlane(glm::vec3 point, Line Plane);
+    static glm::vec3 AveragePoint(glm::vec3 point1, glm::vec3 point2);
     static float LineAngle(Line l1, Line l2);
-    static float LineAngle(vec2 v1, vec2 v2);
-    static vec3 Intersection(Line &l1, Line &l2, float Epsilon);
+    static float LineAngle(glm::vec2 v1, glm::vec2 v2);
+    static glm::vec3 Intersection(Line &l1, Line &l2, float Epsilon);
 
 };
 
-std::ostream& operator << (std::ostream &stream,const vec3 &position);
-std::ostream& operator << (std::ostream &stream,const vec2 &position);
+std::ostream& operator << (std::ostream &stream,const glm::vec3 &position);
+std::ostream& operator << (std::ostream &stream,const glm::vec2 &position);
 std::ostream& operator << (std::ostream &stream, const Line &line);
 
 #endif // LINE_H

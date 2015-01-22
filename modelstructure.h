@@ -42,13 +42,13 @@ public:
     void AddRoot(MarkerPoint *root){roots.push_back(root);}
     void AddPoint(vector<MarkerPoint> points){pointsStructure.insert(pointsStructure.end(), points.begin(), points.end()); size += points.size();}
 
-    vector<size_t> getIDs(vector <vec3> Points);
+    vector<size_t> getIDs(vector <glm::vec3> Points);
     size_t getSize() const {return size;}
 
     void Save(ExportFormat format, std::ofstream &outputFile);
 
 private:
-    void countDistances(vector <vec3> Points);
+    void countDistances(vector <glm::vec3> Points);
     bool verifyDistance(size_t PointIndex, MarkerPoint marker);
 
     void addChildren(QTreeWidgetItem *parentItem, MarkerPoint* parent);
