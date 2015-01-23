@@ -27,7 +27,6 @@
 #include <QtNetwork/QLocalServer>
 #include <QtNetwork/QLocalSocket>
 
-
 #include "animation.h"
 #include "modelstructure.h"
 #include "capturethread.h"

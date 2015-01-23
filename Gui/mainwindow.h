@@ -101,8 +101,6 @@ private slots:
 
     void on_JointsCheck_stateChanged(int arg1);
 
-    void on_BonesCheck_stateChanged(int arg1);
-
     void on_LivePipe_stateChanged(int arg1);
 
 private:

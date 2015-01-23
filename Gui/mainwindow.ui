@@ -223,10 +223,10 @@
    <widget class="QGroupBox" name="SceneSettingsBox">
     <property name="geometry">
      <rect>
-      <x>240</x>
+      <x>250</x>
       <y>20</y>
       <width>101</width>
-      <height>81</height>
+      <height>61</height>
      </rect>
     </property>
     <property name="title">
@@ -264,37 +264,21 @@
       <bool>true</bool>
      </property>
     </widget>
-    <widget class="QCheckBox" name="BonesCheck">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>60</y>
-       <width>85</width>
-       <height>21</height>
-      </rect>
-     </property>
-     <property name="whatsThis">
-      <string/>
-     </property>
-     <property name="text">
-      <string>Bones (!)</string>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
-    </widget>
+    <zorder>LinesCheck</zorder>
+    <zorder>JointsCheck</zorder>
+    <zorder>LivePipe</zorder>
    </widget>
    <widget class="QCheckBox" name="LivePipe">
     <property name="geometry">
      <rect>
-      <x>200</x>
-      <y>360</y>
+      <x>140</x>
+      <y>20</y>
       <width>85</width>
       <height>21</height>
      </rect>
     </property>
     <property name="text">
-     <string>Live</string>
+     <string>Live Game</string>
     </property>
    </widget>
    <widget class="QScrollArea" name="CamerasWindows">
@@ -319,6 +303,29 @@
       </rect>
      </property>
     </widget>
+   </widget>
+   <widget class="QLineEdit" name="NumberOfPoints">
+    <property name="geometry">
+     <rect>
+      <x>312</x>
+      <y>360</y>
+      <width>31</width>
+      <height>23</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="NumberOfPointsLabel">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>360</y>
+      <width>91</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Number of pts:</string>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">

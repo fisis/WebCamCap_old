@@ -496,18 +496,6 @@ void MainWindow::on_JointsCheck_stateChanged(int arg1)
     }
 }
 
-void MainWindow::on_BonesCheck_stateChanged(int arg1)
-{
-    if(arg1 == 0)
-    {
-        ui->OpenGLWIndow->setDrawBones(false);
-    }
-    else
-    {
-        ui->OpenGLWIndow->setDrawBones(true);
-    }
-}
-
 void MainWindow::on_LivePipe_stateChanged(int arg1)
 {
     if(arg1 == 0)

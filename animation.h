@@ -28,7 +28,6 @@
 
 class Animation
 {
-
     float roomEpsilon;
     float frameRate;
     ModelStructure* baseStructure;
