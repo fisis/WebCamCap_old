@@ -29,7 +29,8 @@
 
 #include <QMessageBox>
 
-using namespace glm;
+using glm::vec2;
+using glm::vec3;
 
 AddProject::AddProject(QWidget *parent) :
     QDialog(parent),
@@ -183,6 +184,7 @@ void AddProject::on_CalibNoMarkers_clicked()
     for(size_t i = 0; i < newCameras.size(); i++)
     {
         newCameras[i]->CalibNoMarkers();
+        ui->progressBar->setValue((100*(i+1))/newCameras.size());
     }
 
     calibNoMarkers = true;

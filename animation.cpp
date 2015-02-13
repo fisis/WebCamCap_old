@@ -21,14 +21,19 @@
  */
 
 #include "animation.h"
+#include <fstream>
 
-using namespace glm;
-
-Animation::Animation(float Epsilon, std::string name, ModelStructure *struc)
+Animation::Animation(float Epsilon, std::string name)
 {
     roomEpsilon = Epsilon;
-    name = name;
-    baseStructure = struc;
+    this->name = name;
+}
+
+Animation::Animation(float Epsilon, size_t pointCount, std::string name)
+{
+    roomEpsilon = Epsilon;
+    this->name = name;
+    this->pointCount = pointCount;
 }
 
 void Animation::AddFrame(Frame k)
@@ -36,24 +41,16 @@ void Animation::AddFrame(Frame k)
     frames.push_back(k);
 }
 
-void Animation::AddFrame(std::vector<vec3> pts, std::vector<std::vector<Line> > lines, int elapsed)
+void Animation::AddFrame(std::vector<Point> pts, std::vector<std::vector<Line> > lines, int elapsed)
 {
-    frames.push_back(Frame(pts, lines, elapsed));
+    frames.push_back({elapsed, pts, lines});
 }
 
-void Animation::Save(ExportFormat format, std::string file)
+void Animation::Save(std::string file)
 {
     std::ofstream outputFile;
-    outputFile.open(file, ios_base::out);
+    outputFile.open(file, std::ios_base::out);
 
-    switch (format) {
-    case  BVH:
-       baseStructure->Save(format, outputFile);
-       SaveBVH(outputFile);
-        break;
-    default:
-        break;
-    }
 }
 
 void Animation::PostProcess()
@@ -79,14 +76,6 @@ void Animation::PostProcess()
     //if not nuf pts try to find them, if not nuf intersections aproximate position
     std::vector<size_t> FramesWithMissingPoints;
 
-    for(size_t i = 0; i < frames.size(); i++)
-    {
-        if(frames[i].getPoints().size() != baseStructure->getSize())
-        {
-            FramesWithMissingPoints.push_back(i);
-        }
-    }
-
     handleBadFrames(FramesWithMissingPoints);
 
     //smooth framerate (splines)
@@ -97,7 +86,7 @@ void Animation::PostProcess()
     findStructure();
 }
 
-void Animation::SaveBVH(ofstream &outputFile)
+void Animation::SaveBVH(std::ofstream &outputFile)
 {
 
 }

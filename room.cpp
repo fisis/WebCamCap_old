@@ -24,7 +24,8 @@
 #include <QApplication>
 #include <QtConcurrent/QtConcurrent>
 
-using namespace glm;
+using glm::vec2;
+using glm::vec3;
 using namespace cv;
 
 Room::Room(OpenGLWindow *opengl, vec3 dimensions, float eps, std::string name)
@@ -38,8 +39,8 @@ Room::Room(OpenGLWindow *opengl, vec3 dimensions, float eps, std::string name)
         saved = false;
     }
 
-    opengl = opengl;
-    name = name;
+    this->opengl = opengl;
+    this->name = name;
     roomDimensions = dimensions;
 
     std::cout << roomDimensions << std::endl;
@@ -68,11 +69,16 @@ Room::Room(std::string file)
     std::getline(inputFile, line);
     linestream << line;
 
+    size_t numOfPts;
+
     linestream >> roomDimensions.x;
     linestream >> roomDimensions.y;
     linestream >> roomDimensions.z;
     linestream >> epsilon;
+    linestream >> numOfPts;
     linestream.flush();
+
+    checker.setNumOfPoints(numOfPts);
 
     size_t numOfCams;
     std::stringstream linestream2;
@@ -105,9 +111,13 @@ Room::Room(std::string file)
         linestream3 >> resolution.x;
         linestream3 >> resolution.y;
 
+        size_t thresholdValue;
+        linestream3 >> thresholdValue;
+
         CaptureCamera* temp = new CaptureCamera(tposition, roomDimensions, tname, tID, tAngle);
 
         temp->resolution = resolution;
+        temp->setThreshold(thresholdValue);
 
         AddCamera(temp);
         TurnOnCamera(cameras.size()-1);
@@ -211,6 +221,11 @@ void Room::setEpsilon(float size)
 {
     epsilon = size;
     saved = false;
+}
+
+void Room::setNumberOfPoints(size_t nOfPts)
+{
+    checker.setNumOfPoints(nOfPts);
 }
 
 void Room::RemoveCamera(size_t index)
@@ -317,8 +332,9 @@ void Room::TurnOffCamera(size_t index)
 
 void Room::CaptureAnimationStart()
 {
+    actualAnimation = new Animation(epsilon, checker.getNumOfPoints());
 
-    actualAnimation = new Animation(epsilon);
+    captureAnimation = true;
 }
 
 void Room::setPipe(bool pipe)
@@ -349,8 +365,6 @@ Animation *Room::CaptureAnimationStop()
 
     Animation * ret = actualAnimation;
 
-    actualAnimation = nullptr;
-
     return ret;
 }
 
@@ -367,7 +381,7 @@ void Room::RecordingStart()
     else if(activeCams == 1)
     {
         timer.start();
-
+        opengl->setTwoDimensions(true);
         emit startWork2D();
     }
 }
@@ -375,14 +389,15 @@ void Room::RecordingStart()
 void Room::RecordingStop()
 {
     record = false;
-
+    opengl->setTwoDimensions(false);
     emit stopWork();
 }
 
 void Room::Save(std::ofstream &file)
 {
     //save dimension and epsilon of room
-    file << roomDimensions.x << " " << roomDimensions.y << " " << epsilon << std::endl;
+    file << roomDimensions.x << " " << roomDimensions.y << " " << epsilon << " "
+         << checker.getNumOfPoints() << std::endl;
     file << cameras.size() << std::endl;
 
     for(size_t i = 0; i < cameras.size(); i++)
@@ -459,14 +474,12 @@ void Room::ResultReady(std::vector<Line> lines)
 
     Intersections();
 
-    opengl->setFrame(results, points);
-
     if(Pipe)
     {
         sendMessage(points);
     }
 
-    std::cout << timer.elapsed() << std::endl;
+    //std::cout << timer.elapsed() << std::endl;
 
     timer.restart();
 
@@ -508,7 +521,7 @@ void Room::sendMessage(std::vector<vec2> Points)
 
     std::string msg = ss.str();
 
-    std::cout << msg << std::endl;
+    //std::cout << msg << std::endl;
 
     sendMessage(msg);
 }
@@ -557,6 +570,17 @@ void Room::Intersections()
         camTopology.clear();
     }
 
+    //weld points
+
+    labeledPoints = checker.solvePointIDs(points);
+    opengl->setFrame(labeledPoints, results);
+
+
+    if(captureAnimation)
+    {
+        actualAnimation->AddFrame(Frame(10,labeledPoints, results));
+    }
+
     for(size_t i = 0; i < workers.size(); i++)
     {
         haveResults[i] = false;
@@ -568,13 +592,22 @@ void Room::record2D()
     while(record)
     {
         points2D = cameras[activeCamIndex]->RecordNextFrame2D();
+
+
+        labeledPoints = checker.solvePointIDs(points2D);
+        opengl->setFrame(labeledPoints);
+
         QCoreApplication::processEvents();
+
+        if(captureAnimation)
+        {
+            actualAnimation->AddFrame(Frame(10,labeledPoints));
+        }
 
         if(Pipe)
         {
             sendMessage(points2D);
         }
-        //std::cout << points2D.size() << std::endl;
     }
 }
 

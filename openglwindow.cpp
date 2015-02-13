@@ -25,16 +25,24 @@
 #include <GL/glu.h>
 #include <GL/glut.h>
 
-#include <QDir>
+using glm::vec2;
+using glm::vec3;
 
-using namespace glm;
 
+bool OpenGLWindow::getTwoDimensions() const
+{
+    return twoDimensions;
+}
+
+void OpenGLWindow::setTwoDimensions(bool value)
+{
+    twoDimensions = value;
+}
 OpenGLWindow::OpenGLWindow(QWidget *parent) : QGLWidget(parent)
 {
     zoom = 1.0f;
-    mdrawJoints = true;
-    mdrawLines = true;
-    mdrawBones = true;
+    twoDimensions = false;
+    mdrawJoints = mdrawLines = mdrawBones = true;
     roomDims = vec3(100.0f, 100.0f, 100.0f);
     camRot = vec3(0.0f, 0.0f, 0.0f);
 
@@ -106,11 +114,6 @@ void OpenGLWindow::paintGL()
         drawLines();
     }
 
-    if(mdrawBones)
-    {
-        drawBones();
-    }
-
     drawFloor();
 }
 
@@ -130,11 +133,10 @@ void OpenGLWindow::setRoomDims(vec3 dims)
     updateGL();
 }
 
-void OpenGLWindow::setFrame(std::vector<std::vector<Line> > lns, std::vector<vec3> pts, std::vector<Line> bns)
+void OpenGLWindow::setFrame(std::vector<Point> pts, std::vector<std::vector<Line> > lns)
 {
     joints = pts;
     lines = lns;
-    bones = bns;
 
     updateGL();
 }
@@ -260,24 +262,28 @@ void OpenGLWindow::drawLines()
 
 void OpenGLWindow::drawJoints()
 {
-    glColor3f(1,1,1);
-
     glPushMatrix();
     for(size_t i = 0; i < joints.size(); i++)
     {
-        glTranslatef(joints[i].x, joints[i].z, -joints[i].y);
-        glutSolidSphere(3, 8, 8);
-        glTranslatef(-joints[i].x, -joints[i].z, joints[i].y);
-    }
-    glPopMatrix();
-}
+        //std::cout << joints[i].ID << " ";
+        glColor3f(30*joints[i].ID,254,30*joints[i].ID);
 
-void OpenGLWindow::drawBones()
-{
-    for(size_t i = 0; i < bones.size(); i++)
-    {
-        drawLine(bones[i]);
+        if(twoDimensions)
+        {
+            glTranslatef(joints[i].position.x*100, joints[i].position.z, -joints[i].position.y*100);
+            glutSolidSphere(3, 8, 8);
+            glTranslatef(-joints[i].position.x*100, -joints[i].position.z, joints[i].position.y*100);
+        }
+        else
+        {
+            glTranslatef(joints[i].position.x, joints[i].position.z, -joints[i].position.y);
+            glutSolidSphere(3, 8, 8);
+            glTranslatef(-joints[i].position.x, -joints[i].position.z, joints[i].position.y);
+        }
+
     }
+    //std::cout << std::endl;
+    glPopMatrix();
 }
 
 void OpenGLWindow::drawFloor()

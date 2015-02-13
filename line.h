@@ -29,6 +29,13 @@
 #include <glm/glm.hpp>
 #include <glm/vec3.hpp>
 
+typedef struct Pnt
+{
+    size_t ID;
+    glm::vec3 position;
+
+} Point;
+
 class Line
 {
 public:

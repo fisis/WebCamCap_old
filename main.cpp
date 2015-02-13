@@ -43,7 +43,12 @@ void cleanup(int)
 
 int main(int argc, char *argv[])
 {
+    QCoreApplication::setOrganizationName("Faculty of informatics, Masaryk University");
+    QCoreApplication::setOrganizationDomain("www.fi.muni.cz");
+    QCoreApplication::setApplicationName("WebCamCap");
+
     glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_RGBA | GLUT_ALPHA);
     qRegisterMetaType<std::vector<Line> >("std::vector<Line>");
     qRegisterMetaType<std::vector<glm::vec3> >("std::vector<glm::vec3>");
     qRegisterMetaType<std::vector<glm::vec2> >("std::vector<glm::vec2>");

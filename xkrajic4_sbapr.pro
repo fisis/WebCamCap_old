@@ -35,7 +35,8 @@ SOURCES += main.cpp\
     room.cpp \
     capturethread.cpp \
     Gui/camwidget.cpp \
-    Gui/addcamera.cpp
+    Gui/addcamera.cpp \
+    pointchecker.cpp
 
 HEADERS  += capturecamera.h \
     line.h \
@@ -51,7 +52,8 @@ HEADERS  += capturecamera.h \
     room.h \
     capturethread.h \
     Gui/camwidget.h \
-    Gui/addcamera.h
+    Gui/addcamera.h \
+    pointchecker.h
 
 FORMS    += Gui/structureeditor.ui \
     Gui/mainwindow.ui \

@@ -42,6 +42,7 @@ class AddCamera : public QDialog
     cv::Mat frame, mask;
     bool record, warning;
 
+
 public:
     explicit AddCamera(QWidget *parent = 0, glm::vec3 roomDims = glm::vec3(0.0f,0.0f, 0.0f));
     ~AddCamera();

@@ -64,8 +64,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QRect screen = window.screenGeometry( window.screenNumber(this));
     move(screen.width()/2 - this->width()/2, screen.height()/2 - this->height()/2);
 
-    record = false;
-    captureAnimation = false;
+    record = captureAnimation = false;
 
     //ui->AnimationsTable->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
 
@@ -113,8 +112,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
     {
         delete(recentProjectsQActions.at(i));
     }
-
-
 
     saveLog();
 }
@@ -185,7 +182,7 @@ void MainWindow::OpenRecentProjects()
                 }
             }
 
-            project = new Room(recentProjects[i]);
+            project = new Room(recentProjects[i].toStdString());
             handleMainWProject(project);
         }
     }
@@ -216,18 +213,16 @@ void MainWindow::on_openProject_triggered()
 
     QString filename = QFileDialog::getOpenFileName(this,tr("Load Project"), ".", tr(".txt Files (*.txt)"));
 
-    std::string filestring = filename.toStdString();
-
-    if(filestring != "")
+    if(filename != "")
     {
-        std::cout << "Open project:" << filestring << std::endl;
+        std::cout << "Open project:" << filename.toStdString() << std::endl;
 
-        if(!searchForRecentProjects(filestring))
+        if(!searchForRecentProjects(filename))
         {
-            recentProjects.push_back(filestring);
+            recentProjects.push_back(filename);
         }
 
-        project = new Room(filestring);
+        project = new Room(filename.toStdString());
         handleMainWProject(project);
     }
 
@@ -236,18 +231,19 @@ void MainWindow::on_openProject_triggered()
 void MainWindow::on_editProject_triggered()
 {
     AddProject NewProjectDialog(this);
+
     NewProjectDialog.EditProject(project);
     NewProjectDialog.setModal(true);
 
     bool ok = NewProjectDialog.exec();
-
+/*
     if(ok)
     {
         delete(project);
 
         project = NewProjectDialog.getProject();
         handleMainWProject(project);
-    }
+    }*/
 }
 
 void MainWindow::on_saveProject_triggered()
@@ -256,13 +252,11 @@ void MainWindow::on_saveProject_triggered()
     {
         QString filename = QFileDialog::getSaveFileName(this,tr("Save Project"),QString::fromStdString( project->getName()+".txt" ), tr(".txt Files (*.txt)"));
 
-        std::string filestring = filename.toStdString();
-
-        if(filestring != "")
+        if(filename != "")
         {
-            if(!searchForRecentProjects(filestring))
+            if(!searchForRecentProjects(filename))
             {
-                recentProjects.push_back(filestring);
+                recentProjects.push_back(filename);
 
                 if(!project->getSaved())
                 {
@@ -271,14 +265,14 @@ void MainWindow::on_saveProject_triggered()
             }
 
             std::ofstream outputFile;
-            outputFile.open(filestring, std::ios_base::out);
+            outputFile.open(filename.toStdString(), std::ios_base::out);
 
             //save name of project
             outputFile << project->getName() << std::endl;
 
             project->Save(outputFile);
             outputFile.close();
-            std::cout << "Project saved to:" << filestring << std::endl;
+            std::cout << "Project saved to:" << filename.toStdString() << std::endl;
         }
     }
     else
@@ -317,7 +311,7 @@ void MainWindow::createRollOutMenu()
 
     for(size_t i = 0; i < recentProjects.size(); i++)
     {
-        QAction* temp = new QAction(QString::fromStdString(recentProjects[i]),this);
+        QAction* temp = new QAction(recentProjects[i],this);
 
         recentProjectsQActions.push_back(temp);
         connect(recentProjectsQActions.at(i),  SIGNAL(triggered()), this, SLOT(OpenRecentProjects() ));
@@ -326,7 +320,7 @@ void MainWindow::createRollOutMenu()
     ui->menuRecent_Projects->addActions(recentProjectsQActions);
 }
 
-bool MainWindow::searchForRecentProjects(std::string filestring)
+bool MainWindow::searchForRecentProjects(QString filestring)
 {
     for(size_t i = 0; i < recentProjects.size();i++)
     {
@@ -341,41 +335,32 @@ bool MainWindow::searchForRecentProjects(std::string filestring)
 
 void MainWindow::saveLog()
 {
-    std::ofstream log;
-    log.open(logDestinationFolder, std::ios_base::ate);
+    QList<QVariant> var;
 
-    std::cout << "writing log file" << std::endl;
-
-    for(size_t i = 0; i < recentProjects.size(); i++)
+    for(int i = 0; i < recentProjects.size(); i++)
     {
-        log << recentProjects[i] << std::endl;
+        var.push_back(QVariant(recentProjects[i]));
     }
 
-    log.close();
+    m_settings.setValue("lastFiles", QVariant(var));
 }
 
 void MainWindow::loadLog()
 {
-    std::ifstream log;
-    log.open(logDestinationFolder, std::ios_base::in);
+    auto v = m_settings.value("lastFiles", QList<QVariant>());
+    auto var = v.toList();
 
-    std::string line;
+    QString temp;
 
-    std::cout << "reading log filQTime::e" << std::endl;
-    while(log.good())
+    for(int i = 0; i < var.size(); i++)
     {
-        getline(log,line);
+        temp = var[i].toString();
 
-        if(line != "")
+        if(QFile::exists(temp))
         {
-            if(QFile::exists(QString::fromStdString(line)))
-            {
-                recentProjects.push_back(line);
-                std::cout << line << std::endl;
-            }
+            recentProjects.push_back(temp);
         }
     }
-    log.close();
 }
 
 int MainWindow::NotSavedMessage()
@@ -467,11 +452,6 @@ void MainWindow::on_AnimationsTable_cellClicked(int row, int column)
     }
 }
 
-void MainWindow::on_AddStructure_clicked()
-{
-    scrollWidget->layout()->itemAt(0)->widget()->hide();
-}
-
 void MainWindow::on_LinesCheck_stateChanged(int arg1)
 {
     if(arg1 == 0)
@@ -506,4 +486,9 @@ void MainWindow::on_LivePipe_stateChanged(int arg1)
     {
         project->setPipe(true);
     }
+}
+
+void MainWindow::on_NumberOfPoints_editingFinished()
+{
+    project->setNumberOfPoints(ui->NumberOfPoints->text().toInt());
 }

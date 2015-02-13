@@ -23,6 +23,9 @@
 #include "camwidget.h"
 #include "ui_camwidget.h"
 
+#include <iostream>
+#include <QDir>
+
 CQtOpenCVViewerGl::CQtOpenCVViewerGl(QWidget *parent) :
     QGLWidget(parent)
 {
@@ -38,11 +41,10 @@ CQtOpenCVViewerGl::CQtOpenCVViewerGl(QWidget *parent) :
 
 void CQtOpenCVViewerGl::initializeGL()
 {
-    makeCurrent();
-    qglClearColor(QColor::fromRgb(0,0,0));
-    glClearColor(0,0,0,1.0);
-    glClear(GL_COLOR_BUFFER_BIT);
     mSceneChanged = true;
+
+    showImage(cv::Mat::zeros(480, 640, 16));
+
     updateScene();
 }
 
@@ -82,23 +84,22 @@ void CQtOpenCVViewerGl::resizeGL(int width, int height)
 void CQtOpenCVViewerGl::updateScene()
 {
     if( mSceneChanged && this->isVisible() )
+    {
         updateGL();
+    }
 }
 
 void CQtOpenCVViewerGl::paintGL()
 {
     makeCurrent();
 
-    qglClearColor(QColor(0,0,0,255));
+    qglClearColor(Qt::white);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    if(!mSceneChanged)
-        return;
-    
-    renderImage();
+    if(mSceneChanged)
+        renderImage();
 
     mSceneChanged = false;
-    QGLWidget::swapBuffers();
 }
 
 void CQtOpenCVViewerGl::renderImage()
@@ -153,6 +154,7 @@ void CQtOpenCVViewerGl::renderImage()
 
 void CQtOpenCVViewerGl::showImage( cv::Mat image )
 {
+
     image.copyTo(mOrigImage);
 
     mImgRatio = (float)image.cols/(float)image.rows;

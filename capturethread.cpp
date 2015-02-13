@@ -22,14 +22,15 @@
 
 #include "capturethread.h"
 
-using namespace glm;
+using glm::vec2;
+using glm::vec3;
 
 worker::worker(QWaitCondition *q, CaptureCamera *cam, QObject *parent) :
   QObject(parent)
 {
     running = false;
     line = q;
-    cam = cam;
+    this->cam = cam;
 }
 
 void worker::do_Work()

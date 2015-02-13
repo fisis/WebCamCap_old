@@ -24,6 +24,7 @@
 #define CAMWIDGET_H
 
 #include <QWidget>
+#include <QImage>
 #include <QtOpenGL/QGLWidget>
 #include <opencv2/core/core.hpp>
 
@@ -61,6 +62,8 @@ private:
 
     int         mPosX;                  /// Top left X position to render image in the center of widget
     int         mPosY;                  /// Top left Y position to render image in the center of widget
+
+    cv::Mat m;
 
 };
 

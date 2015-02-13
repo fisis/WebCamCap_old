@@ -60,6 +60,9 @@
     </item>
     <item>
      <widget class="QLineEdit" name="Name">
+      <property name="text">
+       <string>Camera</string>
+      </property>
       <property name="maxLength">
        <number>16</number>
       </property>

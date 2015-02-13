@@ -23,8 +23,11 @@
 #include "line.h"
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/compatibility.hpp>
+#include <cmath>
 
-using namespace glm;
+using glm::vec2;
+using glm::vec3;
+using glm::dot;
 
 Line::Line(vec3 pos, vec3 vec)
 {
@@ -36,30 +39,25 @@ Line::Line(vec3 pos, vec3 vec)
 
 void Line::ClosestPointsOnTwoLines(Line l1, Line l2, vec3 &closestPointLine1, vec3 &closestPointLine2)
 {
-        float a = dot(l1.directionVector, l1.directionVector);
-        float b = dot(l1.directionVector, l2.directionVector);
-        float e = dot(l2.directionVector, l2.directionVector);
+    float a = dot(l1.directionVector, l1.directionVector);
+    float b = dot(l1.directionVector, l2.directionVector);
+    float e = dot(l2.directionVector, l2.directionVector);
 
-        float d = a*e - b*b;
+    float d = a*e - b*b;
 
-        // if lines are not parallel
-        if(d != 0){
-            vec3 r = l1.position - l2.position;
-            float c = dot(l1.directionVector, r);
-            float f = dot(l2.directionVector, r);
+    // if lines are not parallel
+    if(d != 0)
+    {
+        vec3 r = l1.position - l2.position;
+        float c = dot(l1.directionVector, r);
+        float f = dot(l2.directionVector, r);
 
-            float s = (b*f - c*e) / d;
-            float t = (a*f - c*b) / d;
+        float s = (b*f - c*e) / d;
+        float t = (a*f - c*b) / d;
 
-            closestPointLine1 = l1.position + l1.directionVector * s;
-            closestPointLine2 = l2.position + l2.directionVector * t;
-/*
-            std::cout  << l1.Position.x << " " << l1.Position.y << " " << l1.Position.z << std::endl
-                       << "vector:" << l1.DirectionVector.x << " " << l1.DirectionVector.y << " " << l1.DirectionVector.z << std::endl;
-
-            std::cout  << l2.Position.x << " " << l2.Position.y << " " << l2.Position.z << std::endl
-                       << "vector2:" << l2.DirectionVector.x << " " << l2.DirectionVector.y << " " << l2.DirectionVector.z << std::endl << std::endl;
-      */  }
+        closestPointLine1 = l1.position + l1.directionVector * s;
+        closestPointLine2 = l2.position + l2.directionVector * t;
+    }
 }
 
 vec3 Line::IntersectionLinePlane(Line L, Line Plane)
@@ -76,25 +74,19 @@ float Line::DistanceTwoPoints(vec3 point1, vec3 point2)
 {
     vec3 vector = point2 - point1;
 
-    //std::cout << vector.x << vector.y << vector.z << std::endl;
-
-    float res = glm::sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
-
-    std::cout << res <<  std::endl;
-
-    return res;
+    return glm::sqrt( vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
 }
 
 float Line::DistancePointPlane(vec3 Point, Line Plane)
 {
     float    sb, sn, sd;
 
-        sn = -dot( Plane.directionVector, (Point - Plane.position));
-        sd = dot(Plane.directionVector, Plane.directionVector);
-        sb = sn / sd;
+    sn = -dot( Plane.directionVector, (Point - Plane.position));
+    sd = dot(Plane.directionVector, Plane.directionVector);
+    sb = sn / sd;
 
-        vec3 intersection = Point + sb * Plane.directionVector;
-        return DistanceTwoPoints(Point, intersection);
+    vec3 intersection = Point + sb * Plane.directionVector;
+    return DistanceTwoPoints(Point, intersection);
 }
 
 vec3 Line::AveragePoint(vec3 point1, vec3 point2)

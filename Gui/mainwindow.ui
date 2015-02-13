@@ -114,7 +114,7 @@
       <x>10</x>
       <y>130</y>
       <width>341</width>
-      <height>211</height>
+      <height>351</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -169,57 +169,6 @@
      </property>
     </column>
    </widget>
-   <widget class="QTableWidget" name="tableWidget">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>390</y>
-      <width>341</width>
-      <height>101</height>
-     </rect>
-    </property>
-    <attribute name="horizontalHeaderDefaultSectionSize">
-     <number>67</number>
-    </attribute>
-    <column>
-     <property name="text">
-      <string>Use</string>
-     </property>
-    </column>
-    <column>
-     <property name="text">
-      <string>Name</string>
-     </property>
-    </column>
-    <column>
-     <property name="text">
-      <string>Show</string>
-     </property>
-    </column>
-    <column>
-     <property name="text">
-      <string>Edit</string>
-     </property>
-    </column>
-    <column>
-     <property name="text">
-      <string>Save</string>
-     </property>
-    </column>
-   </widget>
-   <widget class="QPushButton" name="AddStructure">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>360</y>
-      <width>91</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Add Structure</string>
-    </property>
-   </widget>
    <widget class="QGroupBox" name="SceneSettingsBox">
     <property name="geometry">
      <rect>
@@ -264,9 +213,6 @@
       <bool>true</bool>
      </property>
     </widget>
-    <zorder>LinesCheck</zorder>
-    <zorder>JointsCheck</zorder>
-    <zorder>LivePipe</zorder>
    </widget>
    <widget class="QCheckBox" name="LivePipe">
     <property name="geometry">
@@ -307,8 +253,8 @@
    <widget class="QLineEdit" name="NumberOfPoints">
     <property name="geometry">
      <rect>
-      <x>312</x>
-      <y>360</y>
+      <x>310</x>
+      <y>90</y>
       <width>31</width>
       <height>23</height>
      </rect>
@@ -317,8 +263,8 @@
    <widget class="QLabel" name="NumberOfPointsLabel">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>360</y>
+      <x>218</x>
+      <y>90</y>
       <width>91</width>
       <height>23</height>
      </rect>

@@ -28,7 +28,7 @@
 #include <QtNetwork/QLocalSocket>
 
 #include "animation.h"
-#include "modelstructure.h"
+#include "pointchecker.h"
 #include "capturethread.h"
 
 typedef struct Edge
@@ -53,7 +53,6 @@ class Room : public QObject
     bool saved;
     OpenGLWindow *opengl;
 
-    ModelStructure *structure;
     std::vector <Edge> camTopology;
     std::vector <CaptureCamera*> cameras;
 
@@ -85,6 +84,9 @@ class Room : public QObject
     std::vector<glm::vec3> points;
     std::vector<glm::vec2> points2D; //2Drecording
 
+    PointChecker checker;
+    std::vector<Point> labeledPoints;
+
 
 public:
     Room(OpenGLWindow *opengl = nullptr, glm::vec3 dimensions = glm::vec3(0.0f,0.0f, 0.0f), float eps = 0.5, std::string name = "Default Project");
@@ -111,8 +113,8 @@ public:
     void setDimensions(glm::vec3 dims);
     void setName(std::string name){this->name = name;}
     void setEpsilon(float size);
+    void setNumberOfPoints(size_t nOfPts);
 
-    ModelStructure* getStructure() const {return structure;}
     std::string getName() const {return name;}
     glm::vec3 getDimensions() const {return roomDimensions;}
     int getWidth()const {return roomDimensions.x;}
@@ -122,8 +124,7 @@ public:
     std::vector<std::vector<Line> > getLines() const {return results;}
     std::vector <CaptureCamera*> getcameras()const {return cameras;}
 
-    void setOpenglWindow(OpenGLWindow * opengl) {opengl = opengl;}
-    void setStructure(ModelStructure* struc) {structure = struc;}
+    void setOpenglWindow(OpenGLWindow * opengl) {this->opengl = opengl;}
     void setThreshold(int value);
     void setBrighnessOfCamera(int value);
 

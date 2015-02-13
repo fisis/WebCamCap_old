@@ -30,7 +30,7 @@
 #include <QMessageBox>
 #include <QDesktopWidget>
 #include <QCloseEvent>
-
+#include <QSettings>
 #include <QKeyEvent>
 
 namespace Ui {
@@ -51,11 +51,12 @@ class MainWindow : public QMainWindow
     std::vector<glm::vec3> points;
 
     std::string logDestinationFolder;
-    std::vector<std::string> recentProjects;
+    QList<QString> recentProjects;
     QList <QAction*> recentProjectsQActions;
 
     QIcon playIcon, editIcon, saveIcon;
 
+    QSettings m_settings;
 
     //scroll area
     QWidget *scrollWidget;
@@ -95,22 +96,21 @@ private slots:
 
     void on_AnimationsTable_cellClicked(int row, int column);
 
-    void on_AddStructure_clicked();
-
     void on_LinesCheck_stateChanged(int arg1);
 
     void on_JointsCheck_stateChanged(int arg1);
 
     void on_LivePipe_stateChanged(int arg1);
 
+    void on_NumberOfPoints_editingFinished();
+
 private:
     void on_Threshold_valueChanged(int value);
 
     void on_brightness_valueChanged(int value);
 
-
     void createRollOutMenu();
-    bool searchForRecentProjects(std::string filestring);
+    bool searchForRecentProjects(QString filestring);
     void saveLog();
     void loadLog();
     void setProjectStats();

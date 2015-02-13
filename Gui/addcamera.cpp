@@ -26,7 +26,8 @@
 
 #include <QMessageBox>
 
-using namespace glm;
+using glm::vec2;
+using glm::vec3;
 using namespace cv;
 
 AddCamera::AddCamera(QWidget *parent, vec3 roomDims) :
@@ -36,9 +37,10 @@ AddCamera::AddCamera(QWidget *parent, vec3 roomDims) :
     cam = nullptr;
     ui->setupUi(this);
     record = false;
-    roomDims = roomDims;
+    this->roomDims = roomDims;
     this->setWindowTitle("Add new Camera");
     warning = false;
+
 }
 
 AddCamera::~AddCamera()

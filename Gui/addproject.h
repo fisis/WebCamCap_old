@@ -27,7 +27,6 @@
 
 #include "../room.h"
 #include "addcamera.h"
-#include "structureeditor.h"
 
 namespace Ui {
 class AddProject;

@@ -23,26 +23,21 @@
 #ifndef FRAME_H
 #define FRAME_H
 
-#include <QTime>
-
 #include "line.h"
 
 class Frame
 {
     int elapsedTime;
 
-    std::vector<glm::vec3> points;
+    std::vector<Point> points;
     std::vector<std::vector<Line> > lines;
-    std::vector<Line> bones;
 
 public:
-    Frame(std::vector<glm::vec3> pts, std::vector<std::vector<Line> > lines, int elapsed);
+    Frame(int elapsed, std::vector<Point> pts, std::vector<std::vector<Line>> lines = std::vector<std::vector<Line>>());
 
-    std::vector<glm::vec3> getPoints() const {return points;}
+    std::vector<Point> getPoints() const {return points;}
     std::vector<std::vector<Line> > getLines() const {return lines;}
     int getElapsedTime() const {return elapsedTime;}
-
-    void setPoints(std::vector<glm::vec3> pts) {points = pts;}
 };
 
 #endif // FRAME_H

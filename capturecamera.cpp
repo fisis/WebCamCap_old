@@ -27,22 +27,30 @@
 #include <glm/ext.hpp>
 
 #include <QMessageBox>
-
 #include <QVBoxLayout>
 
 using namespace cv;
-using namespace glm;
+using glm::vec2;
+using glm::vec3;
+
+#ifdef _MSC_VER
+    using glm::tvec3;
+#else
+    using glm::detail::tvec3;
+#endif
+
 
 CaptureCamera::CaptureCamera(vec3 pos, vec3 roomDimensions, std::string name, int ID, float angle, bool backgroudSubstractor)
 {
     ROI = turnedOn = showWindow = useBackgroundSub = false;
     videoUsbId = ID;
-    name = name;
+    this->name = name;
+
     position = pos;
     angleOfView = angle;
     anglePerPixel = 0;
     thresholdValue = 255;
-    roomDimensions = roomDimensions;
+    this->roomDimensions = roomDimensions;
     ComputeDirVector();
 
     std::cout << "Vector to middle: " << directionVectorToMiddle << std::endl;
@@ -85,7 +93,7 @@ std::vector<Line> CaptureCamera::RecordNextFrame()
     MiddleOfContours();
     CreateLines();
 
-    circle(frame, Point(frame.cols/2, frame.rows/2), 1, CV_RGB(0,255,0), 2);
+    circle(frame, cv::Point(frame.cols/2, frame.rows/2), 1, CV_RGB(0,255,0), 2);
 
     if(showWindow)
     {
@@ -108,7 +116,7 @@ std::vector<vec2> CaptureCamera::RecordNextFrame2D()
     UseFilter();
     MiddleOfContours();
 
-    circle(frame, Point(frame.cols/2, frame.rows/2), 1, CV_RGB(0,255,0), 2);
+    circle(frame, cv::Point(frame.cols/2, frame.rows/2), 1, CV_RGB(0,255,0), 2);
 
     if(showWindow)
     {
@@ -242,7 +250,7 @@ void CaptureCamera::MiddleOfContours()
 
             centerOfContour.push_back(centerTemp);
 
-            circle(frame, Point(centerTemp.x, centerTemp.y), 1, CV_RGB(0,0,255), 2);
+            circle(frame, cv::Point(centerTemp.x, centerTemp.y), 1, CV_RGB(0,0,255), 2);
         }
     }
 }
@@ -261,9 +269,9 @@ void CaptureCamera::CreateLines()
         //vypocitam stred contury vzhľadom ku stredu obrazovky
         centerRelativeTemp = vec2(centerOfContour[i].x - frame.cols/2,centerOfContour[i].y - frame.rows/2);
         //rotacie
-        directionTemp = glm::rotateZ((glm::detail::tvec3<double, (glm::precision)0u>) directionVectorToMiddle, (-centerRelativeTemp.x * anglePerPixel));//*0.0174532925);
+        directionTemp = glm::rotateZ((tvec3<double, (glm::precision)0u>) directionVectorToMiddle, (-centerRelativeTemp.x * anglePerPixel));//*0.0174532925);
 
-        directionTemp = glm::rotateX((glm::detail::tvec3<double, (glm::precision)0u>) directionTemp , (-centerRelativeTemp.y * anglePerPixel));//*0.0174532925);
+        directionTemp = glm::rotateX((tvec3<double, (glm::precision)0u>) directionTemp , (-centerRelativeTemp.y * anglePerPixel));//*0.0174532925);
         lines.push_back(Line(position , directionTemp));
     }
 }
@@ -405,7 +413,9 @@ void CaptureCamera::Hide()
 void CaptureCamera::Save(std::ofstream &outputFile)
 {
     outputFile << name << " " << position.x << " " << position.y << " "
-               << position.z << " " << videoUsbId << " " << angleOfView << std::endl;
+               << position.z << " " << videoUsbId << " " << angleOfView << " "
+               << resolution.x << " " << resolution.y << " " << thresholdValue
+               << std::endl;
 }
 
 void CaptureCamera::CalibNoMarkers()

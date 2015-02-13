@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.11)
 project(WebCamCap)
 
-set(CMAKE_CXX_FLAGS "-m64 -pipe -pedantic -Wall -Wextra -O2 -Wall -W -D_REENTRANT ")
+set(CMAKE_CXX_FLAGS "-m64 -pipe -pedantic -Wall -Wextra -Wall -W -D_REENTRANT ")
 
 #c++11 support
 include(CheckCXXCompilerFlag)
@@ -50,7 +50,6 @@ QT5_WRAP_UI(UIS
     ${CMAKE_CURRENT_SOURCE_DIR}/Gui/animplayer.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/Gui/camwidget.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/Gui/mainwindow.ui
-    ${CMAKE_CURRENT_SOURCE_DIR}/Gui/structureeditor.ui
 )
 
 QT5_WRAP_CPP(CPPS
@@ -60,8 +59,12 @@ QT5_WRAP_CPP(CPPS
     ${CMAKE_CURRENT_SOURCE_DIR}/Gui/animplayer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Gui/camwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Gui/mainwindow.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Gui/structureeditor.h
 )
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Pictures/EditIcon.png ${CMAKE_CURRENT_BINARY_DIR}/Pictures/EditIcon.png COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Pictures/SaveIcon.png ${CMAKE_CURRENT_BINARY_DIR}/Pictures/SaveIcon.png COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Pictures/PlayIcon.png ${CMAKE_CURRENT_BINARY_DIR}/Pictures/PlayIcon.png COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Pictures/main_icon.jpg ${CMAKE_CURRENT_BINARY_DIR}/Pictures/main_icon.jpg COPYONLY)
 
 ADD_EXECUTABLE(${PROJECT_NAME} main.cpp ${SRC} ${UIS})
 
@@ -71,6 +74,7 @@ ADD_EXECUTABLE(${PROJECT_NAME} main.cpp ${SRC} ${UIS})
 
  set_property(DIRECTORY
     APPEND PROPERTY COMPILE_DEFINITIONS_DEBUG DIR_DEBUG_MODE )
+
 
 qt5_use_modules(${PROJECT_NAME} Widgets Core Gui OpenGL Concurrent Network)
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})

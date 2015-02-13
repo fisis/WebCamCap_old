@@ -24,24 +24,23 @@
 #define ANIMATION_H
 
 #include "frame.h"
-#include "modelstructure.h"
 
 class Animation
 {
     float roomEpsilon;
     float frameRate;
-    ModelStructure* baseStructure;
+
+    size_t pointCount;
 
     std::string name;
     std::vector<Frame> frames;
-
-    std::vector<ModelStructure> structuresInFrames; //output
 public:
-    Animation(float Epsilon, std::string name = "Animation_def" , ModelStructure *struc = nullptr);
+    Animation(float Epsilon, std::string name = "Animation_def");
+    Animation(float Epsilon, size_t pointCount, std::string name = "Animation_def" );
 
     void AddFrame(Frame k);
-    void AddFrame(std::vector<glm::vec3> pts, std::vector<std::vector<Line> > lines, int elapsed);
-    void Save(ExportFormat format, std::string file);
+    void AddFrame(std::vector<Point> pts, std::vector<std::vector<Line> > lines, int elapsed);
+    void Save(std::string file);
     void PostProcess();
 
     //getters
@@ -50,7 +49,7 @@ public:
     int getLength() const {return  frames.size();}
 
     //setters
-    void setName(std::string name) {name = name;}
+    void setName(std::string name) {this->name = name;}
 
 private:
     void SaveBVH(std::ofstream &outputFile);

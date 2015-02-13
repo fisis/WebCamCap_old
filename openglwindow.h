@@ -27,13 +27,14 @@
 #include <QtOpenGL/QGLWidget>
 
 #include "line.h"
+#include "pointchecker.h"
 
 class OpenGLWindow : public QGLWidget
 {
     Q_OBJECT
 
     //paint props
-    bool mdrawJoints, mdrawLines, mdrawBones;
+    bool mdrawJoints, mdrawLines, mdrawBones, twoDimensions;
     glm::vec3 camRot;
     float zoom;
 
@@ -44,8 +45,7 @@ class OpenGLWindow : public QGLWidget
 
     //Structure
     std::vector<std::vector<Line> > lines;
-    std::vector<Line > bones;
-    std::vector<glm::vec3> joints;
+    std::vector<Point> joints;
 
     //mouse tracking
     bool leftButton;
@@ -61,8 +61,10 @@ public:
     void setRoomDims(glm::vec3 dims);
     void setDrawJoints(bool draw){mdrawJoints = draw;}
     void setDrawLines(bool draw){mdrawLines = draw;}
-    void setDrawBones(bool draw){mdrawBones = draw;}
-    void setFrame(std::vector<std::vector<Line> > lns = std::vector<std::vector<Line> >(), std::vector<glm::vec3> pts = std::vector<glm::vec3>(), std::vector<Line> bns = std::vector<Line>());
+    void setFrame(std::vector<Point> pts, std::vector<std::vector<Line> > lns = std::vector<std::vector<Line> >());
+    bool getTwoDimensions() const;
+    void setTwoDimensions(bool value);
+
 signals:
 
 public slots:
@@ -81,7 +83,6 @@ private:
 
     void drawLines();
     void drawJoints();
-    void drawBones();
     void drawFloor();
 
     void DefaultView();
