@@ -16,8 +16,8 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
 
-#if !defined(_MATRIX_H_)
-#define _MATRIX_H_
+#ifndef MATRIX_H
+#define MATRIX_H
 
 #include <initializer_list>
 #include <cstdlib>
@@ -53,10 +53,6 @@ private:
   size_t m_columns;
 };
 
-#ifndef USE_EXPORT_KEYWORD
-#include "matrix.cpp"
-//#define export /*export*/
-#endif
-
-#endif /* !defined(_MATRIX_H_) */
+#include "matrix.tpp"
+#endif //MATRIX_H
 

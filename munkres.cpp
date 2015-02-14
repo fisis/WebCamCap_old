@@ -21,7 +21,7 @@
 #include <iostream>
 #include <cmath>
 #include <limits>
-
+#include <assert.h>
 
 void
 replace_infinites(Matrix<double> &matrix) {

@@ -54,6 +54,7 @@ find_package(GLUT REQUIRED)
 file(GLOB SRC
     "*.h"
     "*.cpp"
+    "*.tpp"
     "Gui/*.h"
     "Gui/*.cpp"
 )
