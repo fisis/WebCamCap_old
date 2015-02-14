@@ -96,8 +96,10 @@ public:
     void AddCamera(glm::vec3 pos, std::string name, int ID,int angle);
     void AddCamera(CaptureCamera *cam);
     void RemoveCamera(size_t index);
-    void MakeTopology();
     void Save(std::ofstream &file);
+
+    void MakeTopology();
+    void resolveTopologyDuplicates();
 
     void TurnOnCamera(size_t index);
     void TurnOffCamera(size_t index);

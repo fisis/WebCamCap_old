@@ -260,48 +260,56 @@ void Room::MakeTopology()
     vec3 pos1, pos2;
     vec3 dir1, dir2;
 
-    float min = -181.0f, max = 181.0f, temp_angle;
-    int min_index = -1, max_index = -1;
+    float min = 181.0f, temp_angle;
+    int min_index = -1;
 
     //get
     for(size_t i = 0; i < cameras.size(); i++)
     {
+
         pos1 = cameras[i]->getPosition();
         dir1 = cameras[i]->getDirVector();
 
         for(size_t j = i+1; j < cameras.size(); j++)
         {
+
             pos2 = cameras[j]->getPosition();
             dir2 = cameras[j]->getDirVector();
 
             temp_angle = Line::LineAngle(vec2(dir1.x, dir1.y),vec2(dir2.x, dir2.y));
 
-            if(temp_angle < 0)
+            if(glm::abs(temp_angle) < min)
             {
-                if(temp_angle > min)
-                {
-                    min = temp_angle;
-                    min_index = j;
-                }
-            }
-            else
-            {
-                if(temp_angle < max)
-                {
-                    max = temp_angle;
-                    max_index = j;
-                }
+                min = temp_angle;
+                min_index = j;
             }
         }
 
         if(min_index != -1)
         {
             camTopology.push_back(Edge(i,min_index, epsilon));
-        }
 
-        if(max_index != -1)
+        }
+    }
+
+    resolveTopologyDuplicates();
+
+    std::cout << "new camtopology size:" << camTopology.size() << std::endl;
+}
+
+void Room::resolveTopologyDuplicates()
+{
+    for(size_t i = 0; i < camTopology.size(); i++)
+    {
+        int index_a = camTopology[i].index_a;
+        int index_b = camTopology[i].index_b;
+
+        for(size_t j = 0; j < camTopology.size(); j++)
         {
-            camTopology.push_back(Edge(i,max_index, epsilon));
+            if(camTopology[j].index_a == index_b && camTopology[j].index_b == index_a)
+            {
+                camTopology.erase(camTopology.begin()+j);
+            }
         }
     }
 }
@@ -567,7 +575,7 @@ void Room::Intersections()
     for(size_t i = 0; i < camTopology.size(); i++)
     {
         points.insert(points.end(), camTopology[i].points.begin(), camTopology[i].points.end());
-        camTopology.clear();
+        camTopology[i].points.clear();
     }
 
     //weld points
@@ -575,6 +583,7 @@ void Room::Intersections()
     labeledPoints = checker.solvePointIDs(points);
     opengl->setFrame(labeledPoints, results);
 
+    QCoreApplication::processEvents();
 
     if(captureAnimation)
     {
@@ -601,7 +610,7 @@ void Room::record2D()
 
         if(captureAnimation)
         {
-            actualAnimation->AddFrame(Frame(10,labeledPoints));
+            actualAnimation->AddFrame({10,labeledPoints});
         }
 
         if(Pipe)
