@@ -127,6 +127,8 @@ std::vector<Point> PointChecker::handleNo(std::vector<vec3> points)
     }
     else
     {
+        lastRemovedIDs.clear();
+
         for(size_t i = 0; i < points.size(); i++)
         {
             pts.push_back({nextUniqueIndex(i), points[i]});
@@ -142,16 +144,6 @@ std::vector<Point> PointChecker::handleNotEnough(std::vector<vec3> points)
 
     std::vector< std::vector<double>> m = createDistanceMap(lastPoints, points);
     my_solve(m);
-
-    for (int i = 0; i < m.size(); i++)
-    {
-        for (int j = 0; j < m[i].size(); j++)
-        {
-            std::cout << m[i][j]  << ", ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
 
     pts = addCoveredPoints(points,m);
 
@@ -315,7 +307,8 @@ void PointChecker::handleRemovedPoints(std::vector<Point> points)
         }
         if(!found)
         {
-            lastRemovedIDs.push_back(lastPoints[i].ID);
+            if(lastPoints[i].ID != lastPoints.size())
+                lastRemovedIDs.push_back(lastPoints[i].ID);
         }
     }
 }

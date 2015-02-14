@@ -25,6 +25,8 @@
 #include <GL/glu.h>
 #include <GL/glut.h>
 
+#include <QThread>
+
 using glm::vec2;
 using glm::vec3;
 
@@ -53,6 +55,8 @@ OpenGLWindow::OpenGLWindow(QWidget *parent) : QGLWidget(parent)
     //QImage temp(QDir::currentPath() + "/Pictures/checkboard_texture.jpg");
 
     //texture = QGLWidget::convertToGLFormat(temp);
+
+    generateNewRandomColor();
 }
 
 void OpenGLWindow::initializeGL()
@@ -266,7 +270,7 @@ void OpenGLWindow::drawJoints()
     for(size_t i = 0; i < joints.size(); i++)
     {
         //std::cout << joints[i].ID << " ";
-        glColor3f(30*joints[i].ID,254,30*joints[i].ID);
+        glColor3ub(randomColors[joints[i].ID][0],randomColors[joints[i].ID][1],randomColors[joints[i].ID][2]);
 
         if(twoDimensions)
         {
@@ -306,5 +310,21 @@ void OpenGLWindow::DefaultView()
 
 void OpenGLWindow::loadTexture()
 {
+
+}
+
+void OpenGLWindow::generateNewRandomColor()
+{
+    for(size_t i = 0; i < 100; i++)
+    {
+        std::vector<int> ints;
+        ints.push_back(qrand()%255);
+        QThread::msleep(2);
+        ints.push_back(qrand()%255);
+        QThread::msleep(2);
+        ints.push_back(qrand()%255);
+
+        randomColors.push_back(ints);
+    }
 
 }

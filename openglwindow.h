@@ -34,6 +34,7 @@ class OpenGLWindow : public QGLWidget
     Q_OBJECT
 
     //paint props
+    std::vector<std::vector<int>> randomColors;
     bool mdrawJoints, mdrawLines, mdrawBones, twoDimensions;
     glm::vec3 camRot;
     float zoom;
@@ -89,6 +90,7 @@ private:
 
     void loadTexture();
 
+    void generateNewRandomColor();
 };
 
 #endif // OPENGLWINDOW_H

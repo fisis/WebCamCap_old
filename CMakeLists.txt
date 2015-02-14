@@ -1,7 +1,15 @@
 cmake_minimum_required(VERSION 2.8.11)
 project(WebCamCap)
 
-set(CMAKE_CXX_FLAGS "-m64 -pipe -pedantic -Wall -Wextra -Wall -W -D_REENTRANT ")
+if (${CMAKE_VERSION} VERSION_GREATER 3.0.0)
+  cmake_policy(SET CMP0043 OLD)
+endif()
+
+
+IF (UNIX)
+        set(CMAKE_CXX_FLAGS "-m64 -pipe -pedantic -Wall -Wextra -O2 -Wall -W -D_REENTRANT ")
+ENDIF (UNIX)
+
 
 #c++11 support
 include(CheckCXXCompilerFlag)
@@ -24,8 +32,14 @@ set(HW_GUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Gui)
 subdirs(Gui)
 
 FIND_PATH(INC_GLM "glm/glm.hpp")
+FIND_PATH(INC_GLUT "GL/glut.h")
 
-include_directories(QT_INCLUDE_DIR ${HW_GUI_DIR} ${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS} INCLUDE_DIRECTORIES(${INC_GLM}))
+IF (WIN32)
+        FIND_LIBRARY(LIB_GLUT "freeglut.dll")
+        SET(LIBS ${LIBS} ${LIB_GLUT})
+ENDIF (WIN32)
+
+include_directories(QT_INCLUDE_DIR ${HW_GUI_DIR} ${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS} ${INC_GLM} ${INC_GLUT})
 
 FIND_PACKAGE(Qt5Core)
 FIND_PACKAGE(Qt5Widgets)

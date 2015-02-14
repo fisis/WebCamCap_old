@@ -60,9 +60,4 @@ void my_solve(std::vector <std::vector <double> > &m)
   fill_std_2d_vector_from_munkres_matrix<double>(m, matrix);
 }
 
-#ifndef USE_EXPORT_KEYWORD
-#include "std_2d_vector.cpp"
-//#define export /*export*/
-#endif
-
 #endif /* !defined(_MUNKRES_ADAPTERS_STD_2D_VECTOR_H_) */
