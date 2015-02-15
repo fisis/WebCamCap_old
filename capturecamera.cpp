@@ -130,6 +130,8 @@ std::vector<vec2> CaptureCamera::RecordNextFrame2D()
 
 void CaptureCamera::UseFilter()
 {
+    GetUndisortedPosition();
+
     if(ROI)
     {
         frame.copyTo(ROIMask, ROIMask);
@@ -173,66 +175,39 @@ void CaptureCamera::UseFilter()
     drawContours(frame, contours, -1, contourColor , CV_FILLED);
 }
 
-vec2 CaptureCamera::GetUndisortedPosition(vec2 frameResolution, vec2 position)
+void CaptureCamera::GetUndisortedPosition()
 {
     //std::cout << "old_position " << position.x << " " << position.y << std::endl;
 
-    double rx = (position.x-frameResolution.x/2);
-    double ry = (position.y-frameResolution.y/2);
+    Mat framein;
 
-    double koefs[5];
+    frame.copyTo(framein);
 
-    koefs[0] = 1.3052770701803743e-01;
-    koefs[1] = -9.0379059948047979e-01;
-    koefs[2] = -6.7746705600785278e-03;
-    koefs[3] = 4.6668197991296947e-03;
-    koefs[4] = 1.3811390526336100e+00;
+    float koefs[5];
 
-    double camMatrix[9];
+    float k1 = koefs[0] = -6.3798734804597357e-02;
+    float k2 = koefs[1] = -5.7040895008453737e-03;
+    float p1 = koefs[2] = -3.1326748002862385e-02;
+    float p2 = koefs[3] = 1.1024120014532667e-02;
+    float k3 = koefs[4] = 3.2344786027968481e-01;
 
-    camMatrix[0] = 6.9275889314344511e+02;
+    float camMatrix[9];
+
+    camMatrix[0] = 6.8234628143642976e+02;
     camMatrix[1] = 0;
-    camMatrix[2] = 3.1950000000000000e+02;
+    camMatrix[2] = 3.3462073472534672e+02;
     camMatrix[3] = 0;
-    camMatrix[4] = 6.9275889314344511e+02;
-    camMatrix[5] = 2.3950000000000000e+02;
+    camMatrix[4] = 6.9022187945217445e+02;
+    camMatrix[5] = 1.6499630532779648e+02;
     camMatrix[6] = 0;
     camMatrix[7] = 0;
     camMatrix[8] = 1;
 
+    Mat intrinsic = Mat(3, 3, CV_32FC1, camMatrix);
+    Mat distCoeffs = Mat(1, 5, CV_32FC1, koefs);
 
-    cv::Mat srcMat = cv::Mat(1,1,CV_64FC2);
-    srcMat.at<Point2d>(0,0).x = static_cast<float>(rx);
-    srcMat.at<Point2d>(0,0).y = static_cast<float>(ry);
+    cv::undistort(framein, frame, intrinsic, distCoeffs);
 
-    cv::Mat destMat = cv::Mat(1,1,CV_64FC2);
-    cv::Mat cameraMat = Mat::eye(3, 3, CV_64F);
-    cv::Mat distCoeffs  = Mat::zeros(8, 1, CV_64F);
-
-    for(int i = 0; i < 5; i++)
-    {
-        distCoeffs.at<double>(i,0) = static_cast<double>(koefs[i]);
-    }
-
-    for(int i = 0; i < 3; i++)
-        for(int j = 0; j < 3; j++)
-        {
-            cameraMat.at<double>(i,j) = static_cast<double>(camMatrix[3*i+j]);
-        }
-
-    cv::undistortPoints(srcMat, destMat, cameraMat, distCoeffs);
-
-    double fx = cameraMat.at<double>(0,0);
-    double fy = cameraMat.at<double>(1,1);
-    double cx = cameraMat.at<double>(0,2);
-    double cy = cameraMat.at<double>(1,2);
-
-    destMat.at<Point2d>(0,0).x = destMat.at<Point2d>(0,0).x * fx + cx + frameResolution.x/2;
-    destMat.at<Point2d>(0,0).y = destMat.at<Point2d>(0,0).y * fy + cy + frameResolution.y/2;
-
-    //std::cout << "new_position " <<(double) destMat.at<Point2d>(0,0).x << " " << (double)  destMat.at<Point2d>(0,0).y << std::endl;
-
-    return vec2(destMat.at<Point2d>(0,0).x , destMat.at<Point2d>(0,0).y);
 }
 
 void CaptureCamera::MiddleOfContours()
@@ -246,8 +221,6 @@ void CaptureCamera::MiddleOfContours()
 
         if(!isnan(centerTemp.x) && !isnan(centerTemp.y))
         {
-            //CenterTemp = GetUndisortedPosition(vec2(Frame.cols, Frame.rows), CenterTemp);
-
             centerOfContour.push_back(centerTemp);
 
             circle(frame, cv::Point(centerTemp.x, centerTemp.y), 1, CV_RGB(0,0,255), 2);

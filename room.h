@@ -147,6 +147,8 @@ private:
     static void Intersection(Edge &camsEdge);
     void Intersections();
 
+    void weldPoints(std::vector<glm::vec3> &points);
+
 };
 
 #endif // Room_H

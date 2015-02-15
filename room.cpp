@@ -579,6 +579,10 @@ void Room::Intersections()
     }
 
     //weld points
+    if(activeCams >= 3)
+    {
+        weldPoints(points);
+    }
 
     labeledPoints = checker.solvePointIDs(points);
     opengl->setFrame(labeledPoints, results);
@@ -594,6 +598,11 @@ void Room::Intersections()
     {
         haveResults[i] = false;
     }
+}
+
+void Room::weldPoints(std::vector<glm::vec3> &points)
+{
+
 }
 
 void Room::record2D()

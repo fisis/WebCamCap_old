@@ -129,7 +129,7 @@ public slots:
 
 private:
 
-    glm::vec2 GetUndisortedPosition(glm::vec2 frameResolution, glm::vec2 position);
+    void GetUndisortedPosition();
     void UseFilter();
     void MiddleOfContours();
     void CreateLines();
