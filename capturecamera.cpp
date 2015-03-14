@@ -40,6 +40,26 @@ using glm::vec3;
 #endif
 
 
+
+cv::Mat CaptureCamera::distortionCoeffs() const
+{
+    return m_distortionCoeffs;
+}
+
+void CaptureCamera::setDistortionCoeffs(const cv::Mat &distortionCoeffs)
+{
+    m_distortionCoeffs = distortionCoeffs;
+}
+
+cv::Mat CaptureCamera::cameraMatrix() const
+{
+    return m_cameraIntrinsicMatrix;
+}
+
+void CaptureCamera::setCameraMatrix(const cv::Mat &cameraMatrix)
+{
+    m_cameraIntrinsicMatrix = cameraMatrix;
+}
 CaptureCamera::CaptureCamera(vec3 pos, vec3 roomDimensions, std::string name, int ID, float angle, bool backgroudSubstractor)
 {
     ROI = turnedOn = showWindow = useBackgroundSub = false;
@@ -52,6 +72,7 @@ CaptureCamera::CaptureCamera(vec3 pos, vec3 roomDimensions, std::string name, in
     thresholdValue = 255;
     this->roomDimensions = roomDimensions;
     ComputeDirVector();
+    makeCameraMatrix();
 
     std::cout << "Vector to middle: " << directionVectorToMiddle << std::endl;
 
@@ -130,7 +151,10 @@ std::vector<vec2> CaptureCamera::RecordNextFrame2D()
 
 void CaptureCamera::UseFilter()
 {
-    GetUndisortedPosition();
+    if(!m_distortionCoeffs.empty() && !m_cameraIntrinsicMatrix.empty())
+    {
+        GetUndisortedPosition();
+    }
 
     if(ROI)
     {
@@ -166,7 +190,7 @@ void CaptureCamera::UseFilter()
     {
         double contArea = contourArea(contours[i]);
 
-        if(contArea > 500 || contArea <= 20)
+        if(contArea > 500 || contArea <= 10)
         {
             contours.erase(contours.begin()+i);
         }
@@ -183,30 +207,7 @@ void CaptureCamera::GetUndisortedPosition()
 
     frame.copyTo(framein);
 
-    float koefs[5];
-
-    float k1 = koefs[0] = -6.3798734804597357e-02;
-    float k2 = koefs[1] = -5.7040895008453737e-03;
-    float p1 = koefs[2] = -3.1326748002862385e-02;
-    float p2 = koefs[3] = 1.1024120014532667e-02;
-    float k3 = koefs[4] = 3.2344786027968481e-01;
-
-    float camMatrix[9];
-
-    camMatrix[0] = 6.8234628143642976e+02;
-    camMatrix[1] = 0;
-    camMatrix[2] = 3.3462073472534672e+02;
-    camMatrix[3] = 0;
-    camMatrix[4] = 6.9022187945217445e+02;
-    camMatrix[5] = 1.6499630532779648e+02;
-    camMatrix[6] = 0;
-    camMatrix[7] = 0;
-    camMatrix[8] = 1;
-
-    Mat intrinsic = Mat(3, 3, CV_32FC1, camMatrix);
-    Mat distCoeffs = Mat(1, 5, CV_32FC1, koefs);
-
-    cv::undistort(framein, frame, intrinsic, distCoeffs);
+    cv::undistort(framein, frame, m_cameraIntrinsicMatrix, m_distortionCoeffs);
 
 }
 
@@ -315,6 +316,24 @@ void CaptureCamera::thresholdCam(size_t threshold)
     setThreshold(threshold);
 }
 
+void CaptureCamera::makeCameraMatrix()
+{
+    cv::Mat matrix;
+
+    matrix = cv::Mat::zeros(4, 4, CV_32F);
+
+    matrix.at<float>(0,3) = position.x;
+    matrix.at<float>(1,3) = position.y;
+    matrix.at<float>(2,3) = position.z;
+    matrix.at<float>(3,3) = 1;
+
+    float myAngle = Line::LineAngle(Line(glm::vec3(0,0,0), glm::vec3(1, 0, 0)), Line(glm::vec3(0,0,0), directionVectorToMiddle));
+    
+    std::cout << matrix << std::endl << myAngle << std::endl;
+
+
+}
+
 void CaptureCamera::TurnOn()
 {
     if(turnedOn)
@@ -335,22 +354,13 @@ void CaptureCamera::TurnOn()
         //QtWidgetViewer->setCheckTurnedOn(false);
         turnedOn = false;
     }
-/*
+
         if(resolution.x != 0 && resolution.y !=0)
         {
-            Camera.set(CAP_PROP_FRAME_WIDTH, resolution.x);
-            Camera.set(CAP_PROP_FRAME_HEIGHT, resolution.y);
+            camera.set(CV_CAP_PROP_FRAME_WIDTH, resolution.x);
+            camera.set(CV_CAP_PROP_FRAME_HEIGHT, resolution.y);
         }
 
-#ifdef _WIN32 // note the underscore: without it, it's not msdn official!
-    // Windows (x64 and x86)
-#elif __linux__
-    // linux
-#elif __APPLE__
-    // Mac OS, not sure if this is covered by __posix__ and/or __unix__ though...
-#endif
-
-*/
 }
 
 void CaptureCamera::TurnOff()
@@ -515,7 +525,7 @@ int CaptureCamera::CalibWithMarkers(int numOfMarkers)
             if(nLines < lines.size())
             {
                 thresholdLow = thresholdValue;
-                std::cout << "calibrated lower value" << thresholdLow << std::endl;
+                std::cout << "distance: " << "calibrated lower value" << thresholdLow << std::endl;
                 break;
             }
         }

@@ -65,5 +65,6 @@ public:
 std::ostream& operator << (std::ostream &stream,const glm::vec3 &position);
 std::ostream& operator << (std::ostream &stream,const glm::vec2 &position);
 std::ostream& operator << (std::ostream &stream, const Line &line);
+std::ostream& operator << (std::ostream &stream, const Point &pnt);
 
 #endif // LINE_H

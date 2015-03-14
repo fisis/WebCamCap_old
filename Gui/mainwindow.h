@@ -58,6 +58,8 @@ class MainWindow : public QMainWindow
 
     QSettings m_settings;
 
+    QVector<Animation*> m_animations;
+
     //scroll area
     QWidget *scrollWidget;
 

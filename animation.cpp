@@ -23,17 +23,13 @@
 #include "animation.h"
 #include <fstream>
 
-Animation::Animation(float Epsilon, std::string name)
+Animation::Animation(glm::vec3 roomdims, float Epsilon, std::string name)
 {
-    roomEpsilon = Epsilon;
-    this->name = name;
-}
+    frameRate = 0;
 
-Animation::Animation(float Epsilon, size_t pointCount, std::string name)
-{
+    roomDims = roomdims;
     roomEpsilon = Epsilon;
     this->name = name;
-    this->pointCount = pointCount;
 }
 
 void Animation::AddFrame(Frame k)
@@ -51,6 +47,15 @@ void Animation::Save(std::string file)
     std::ofstream outputFile;
     outputFile.open(file, std::ios_base::out);
 
+    outputFile << roomDims << " " << roomEpsilon << std::endl;
+    outputFile << frames.size() << std::endl;
+
+    for(size_t i = 0; i < frames.size(); i++)
+    {
+        outputFile << frames[i] << std::endl;
+    }
+
+    outputFile.close();
 }
 
 void Animation::PostProcess()

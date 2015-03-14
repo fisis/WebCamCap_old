@@ -27,16 +27,14 @@
 
 class Animation
 {
+    glm::vec3 roomDims;
     float roomEpsilon;
     float frameRate;
-
-    size_t pointCount;
 
     std::string name;
     std::vector<Frame> frames;
 public:
-    Animation(float Epsilon, std::string name = "Animation_def");
-    Animation(float Epsilon, size_t pointCount, std::string name = "Animation_def" );
+    Animation(glm::vec3 roomdims, float Epsilon, std::string name = "Animation_def");
 
     void AddFrame(Frame k);
     void AddFrame(std::vector<Point> pts, std::vector<std::vector<Line> > lines, int elapsed);

@@ -57,6 +57,8 @@ void Line::ClosestPointsOnTwoLines(Line l1, Line l2, vec3 &closestPointLine1, ve
 
         closestPointLine1 = l1.position + l1.directionVector * s;
         closestPointLine2 = l2.position + l2.directionVector * t;
+
+        std::cout << DistanceTwoPoints(closestPointLine1, closestPointLine2) << std::endl;
     }
 }
 
@@ -146,3 +148,7 @@ std::ostream& operator <<(std::ostream &stream, const Line &line)
     return stream;
 }
 
+std::ostream &operator <<(std::ostream &stream, const Point &pnt)
+{
+    stream << pnt.ID << " " << pnt.position;
+}

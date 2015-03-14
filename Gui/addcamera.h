@@ -24,6 +24,8 @@
 #define ADDCAMERA_H
 
 #include <QDialog>
+#include <QProcess>
+
 #include <opencv2/highgui/highgui.hpp>
 
 #include "../capturecamera.h"
@@ -41,7 +43,10 @@ class AddCamera : public QDialog
     glm::vec3 roomDims;
     cv::Mat frame, mask;
     bool record, warning;
+    QProcess *m_process;
 
+    cv::Mat m_cameraMatrix;
+    cv::Mat m_coefficient;
 
 public:
     explicit AddCamera(QWidget *parent = 0, glm::vec3 roomDims = glm::vec3(0.0f,0.0f, 0.0f));
@@ -50,6 +55,8 @@ public:
     CaptureCamera* getCam() const {return cam;}
 
 private slots:
+
+    void readYaml(int status);
 
     void on_buttonBox_accepted();
 
@@ -61,10 +68,16 @@ private slots:
 
     void on_FrameRows_editingFinished();
 
+    void on_pushButton_clicked();
+
+    void on_readYAML_clicked();
+
 private:
     Ui::AddCamera *ui;
     void recording();
     void endRecording();
+
+    void readConfigFile(QString path);
 };
 
 #endif // ADDCAMERA_H

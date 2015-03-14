@@ -73,19 +73,6 @@ std::vector<Point> PointChecker::solvePointIDs(std::vector<vec3> points)
 
     return pts;
 
-/*
-    std::cout << "distance map: " << std::endl;
-    for (int i = 0; i < m.size(); i++)
-    {
-        for (int j = 0; j < m[i].size(); j++)
-        {
-            std::cout << m[i][j]  << ", ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
-*/
-
 }
 
 std::vector<Point> PointChecker::solvePointIDs(std::vector<vec2> points)
@@ -158,6 +145,11 @@ std::vector<Point> PointChecker::handleNotEnough(std::vector<vec3> points)
     {
         state = PointCount::GOOD;
 
+        if(!lastGoodFrame.empty())
+        {
+            m = createDistanceMap(lastGoodFrame, points);
+            my_solve(m);
+        }
         addUncoveredPoints(points, m, pts);
 
     }
@@ -307,7 +299,7 @@ void PointChecker::handleRemovedPoints(std::vector<Point> points)
         }
         if(!found)
         {
-            if(lastPoints[i].ID != lastPoints.size())
+            if(lastPoints[i].ID <= lastPoints.size())
                 lastRemovedIDs.push_back(lastPoints[i].ID);
         }
     }

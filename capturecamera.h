@@ -46,6 +46,8 @@ class CaptureCamera: public QObject
     glm::vec3 position;
     glm::vec3 directionVectorToMiddle;
 
+    cv::Mat m_finalCameraMatrix;
+
     bool turnedOn;
     bool showWindow;
 
@@ -78,6 +80,13 @@ class CaptureCamera: public QObject
     std::vector<Line> lines;
 
     CamWidget * QtWidgetViewer;
+
+    //undistortion
+    cv::Mat m_distortionCoeffs;
+    cv::Mat m_cameraProjectionMatrix;
+    cv::Mat m_cameraExtrinsicMatrix;
+    cv::Mat m_cameraIntrinsicMatrix;
+
 public:
     //public parameters
     glm::vec2 resolution;
@@ -120,6 +129,12 @@ public:
 
     static cv::Mat myColorThreshold(cv::Mat input, cv::Mat dilateKernel, int thresholdValue, int maxValue);
 
+    cv::Mat distortionCoeffs() const;
+    void setDistortionCoeffs(const cv::Mat &distortionCoeffs);
+
+    cv::Mat cameraMatrix() const;
+    void setCameraMatrix(const cv::Mat &cameraMatrix);
+
 public slots:
     void activeCam(bool active);
 
@@ -128,7 +143,8 @@ public slots:
     void thresholdCam(size_t threshold);
 
 private:
-
+    void makeCameraMatrix();
+    
     void GetUndisortedPosition();
     void UseFilter();
     void MiddleOfContours();

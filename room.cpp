@@ -340,7 +340,7 @@ void Room::TurnOffCamera(size_t index)
 
 void Room::CaptureAnimationStart()
 {
-    actualAnimation = new Animation(epsilon, checker.getNumOfPoints());
+    actualAnimation = new Animation(roomDimensions, epsilon);
 
     captureAnimation = true;
 }
@@ -372,6 +372,8 @@ Animation *Room::CaptureAnimationStop()
     animations.push_back(actualAnimation);
 
     Animation * ret = actualAnimation;
+
+    captureAnimation = false;
 
     return ret;
 }
@@ -487,10 +489,15 @@ void Room::ResultReady(std::vector<Line> lines)
         sendMessage(points);
     }
 
+    for(size_t i = 0; i < points.size(); i++)
+    {
+        std::cout << points[i] << std::endl;
+    }
+
     //std::cout << timer.elapsed() << std::endl;
 
-    timer.restart();
 
+    timer.restart();
     allLines.wakeAll();
     QCoreApplication::processEvents();
 }

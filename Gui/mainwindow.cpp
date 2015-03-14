@@ -405,6 +405,8 @@ void MainWindow::on_stopButton_pressed()
         Animation * ActualAnimation = project->CaptureAnimationStop();
         captureAnimation = false;
 
+        m_animations.push_back(ActualAnimation);
+
         int row = ui->AnimationsTable->rowCount();
         ui->AnimationsTable->insertRow(row);
 
@@ -446,6 +448,7 @@ void MainWindow::on_AnimationsTable_cellClicked(int row, int column)
     case 5:
         //save animation
         ui->AnimationsTable->item(row, column)->setSelected(false);
+        m_animations[row]->Save((ui->AnimationsTable->item(row, 0)->text() + ".wcc").toStdString());
         break;
     default:
         break;

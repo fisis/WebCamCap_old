@@ -24,7 +24,10 @@
 #include "addcamera.h"
 #include "ui_addcamera.h"
 
+#include <QDir>
 #include <QMessageBox>
+#include <QDebug>
+#include <QFileDialog>
 
 using glm::vec2;
 using glm::vec3;
@@ -35,6 +38,7 @@ AddCamera::AddCamera(QWidget *parent, vec3 roomDims) :
     ui(new Ui::AddCamera)
 {
     cam = nullptr;
+    m_process = nullptr;
     ui->setupUi(this);
     record = false;
     this->roomDims = roomDims;
@@ -45,7 +49,17 @@ AddCamera::AddCamera(QWidget *parent, vec3 roomDims) :
 
 AddCamera::~AddCamera()
 {
+    if(m_process)
+    {
+        delete m_process;
+    }
+
     delete ui;
+}
+
+void AddCamera::readYaml(int status)
+{
+    readConfigFile(ui->Name->text());
 }
 
 void AddCamera::on_buttonBox_accepted()
@@ -64,6 +78,9 @@ void AddCamera::on_buttonBox_accepted()
                             ui->zorny_uhol->text().toFloat(), ui->useBackgroundSub->isChecked());
 
     cam->resolution = vec2(ui->FrameCols->text().toInt(), ui->FrameRows->text().toInt());
+
+    cam->setDistortionCoeffs(m_coefficient);
+    cam->setCameraMatrix(m_cameraMatrix);
 
     if(warning)
     {
@@ -176,6 +193,14 @@ void AddCamera::endRecording()
     }
 }
 
+void AddCamera::readConfigFile(QString path)
+{
+    cv::FileStorage file(path.toStdString(), FileStorage::READ);
+
+    file["camera_matrix"] >> m_cameraMatrix;
+    file["distortion_coefficients"] >> m_coefficient;
+}
+
 
 void AddCamera::on_FrameCols_editingFinished()
 {
@@ -185,4 +210,37 @@ void AddCamera::on_FrameCols_editingFinished()
 void AddCamera::on_FrameRows_editingFinished()
 {
     temp.set(CV_CAP_PROP_FRAME_HEIGHT, ui->FrameRows->text().toInt());
+}
+
+void AddCamera::on_pushButton_clicked()
+{
+    QStringList arguments;
+
+    QString usbid = ui->deviceUSB_ID->text();
+    if(usbid == "")
+    {
+        usbid = "0";
+    }
+
+    arguments << usbid;
+    arguments << "-w" << "7" << "-h" << "5" << "-pt" << "chessboard" << "-n" << "50";
+    arguments << "-o" << ui->Name->text() + ".yaml";
+
+    m_process = new QProcess(this);
+    m_process->start(QDir::currentPath() + "/Calib",  arguments);
+
+    connect(m_process, SIGNAL(finished(int)), this, SLOT(readYaml(int)));
+}
+
+void AddCamera::on_readYAML_clicked()
+{
+
+    QString filename = QFileDialog::getOpenFileName(this,tr("Load Distortion Coefficients"), ".", tr(".yaml Files (*.yaml)"));
+
+    if(filename != "")
+    {
+        std::cout << filename.toStdString() << std::endl;
+
+        readConfigFile(filename);
+    }
 }

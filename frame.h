@@ -38,6 +38,11 @@ public:
     std::vector<Point> getPoints() const {return points;}
     std::vector<std::vector<Line> > getLines() const {return lines;}
     int getElapsedTime() const {return elapsedTime;}
+
+
+
 };
+
+std::ostream & operator << (std::ostream &stream, Frame frame);
 
 #endif // FRAME_H

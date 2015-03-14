@@ -29,3 +29,17 @@ Frame::Frame(int elapsed, std::vector<Point> pts, std::vector<std::vector<Line> 
     this->lines = lines;
     elapsedTime = elapsed;
 }
+
+std::ostream &operator <<(std::ostream &stream, Frame frame)
+{
+    stream << frame.getElapsedTime() << " ";
+
+    auto points = frame.getPoints();
+
+    for(size_t i = 0; i < frame.getPoints().size(); i++)
+    {
+        stream << points[i] << " ";
+    }
+
+    return stream;
+}
