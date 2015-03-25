@@ -23,23 +23,15 @@
 #include "animation.h"
 #include <fstream>
 
-Animation::Animation(glm::vec3 roomdims, float Epsilon, std::string name)
+Animation::Animation(glm::vec3 roomdims, std::string name)
 {
-    frameRate = 0;
-
-    roomDims = roomdims;
-    roomEpsilon = Epsilon;
-    this->name = name;
+    m_roomDimensions = roomdims;
+    this->m_name = name;
 }
 
 void Animation::AddFrame(Frame k)
 {
-    frames.push_back(k);
-}
-
-void Animation::AddFrame(std::vector<Point> pts, std::vector<std::vector<Line> > lines, int elapsed)
-{
-    frames.push_back({elapsed, pts, lines});
+    m_frames.push_back(k);
 }
 
 void Animation::Save(std::string file)
@@ -47,12 +39,12 @@ void Animation::Save(std::string file)
     std::ofstream outputFile;
     outputFile.open(file, std::ios_base::out);
 
-    outputFile << roomDims << " " << roomEpsilon << std::endl;
-    outputFile << frames.size() << std::endl;
+    outputFile << m_roomDimensions << m_frameRate << std::endl;
+    outputFile << m_frames.size() << std::endl;
 
-    for(size_t i = 0; i < frames.size(); i++)
+    for(size_t i = 0; i < m_frames.size(); i++)
     {
-        outputFile << frames[i] << std::endl;
+        outputFile << m_frames[i] << std::endl;
     }
 
     outputFile.close();
@@ -63,45 +55,10 @@ void Animation::PostProcess()
     //count framerate
     int sum = 0;
 
-    for(size_t i = 1; i < frames.size(); i++)
+    for(size_t i = 1; i < m_frames.size(); i++)
     {
-        sum += frames[i].getElapsedTime();
+        sum += m_frames[i].getElapsedTime();
     }
 
-    frameRate = 1000 / ( sum/ (float) frames.size() );
-
-    //vodorovna zamena bodov
-
-
-
-    //smooth positions, if some jumps from frame to frame
-
-
-
-    //if not nuf pts try to find them, if not nuf intersections aproximate position
-    std::vector<size_t> FramesWithMissingPoints;
-
-    handleBadFrames(FramesWithMissingPoints);
-
-    //smooth framerate (splines)
-
-
-
-    //for every frame get structure
-    findStructure();
-}
-
-void Animation::SaveBVH(std::ofstream &outputFile)
-{
-
-}
-
-void Animation::handleBadFrames(std::vector<size_t> Frames)
-{
-
-}
-
-void Animation::findStructure()
-{
-
+    m_frameRate = 1000 / ( sum/ (float) m_frames.size() );
 }

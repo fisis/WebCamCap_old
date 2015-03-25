@@ -51,7 +51,7 @@ public:
 
 signals:
     void finished();
-    void ResultReady(std::vector<Line> lines);
+    void ResultReady(std::vector<Line> points2D);
 
 public slots:
   void StopWork();

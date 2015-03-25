@@ -31,6 +31,8 @@
 #include "line.h"
 #include "Gui/camwidget.h"
 
+#include <QHash>
+
 class CaptureCamera: public QObject
 {
     Q_OBJECT
@@ -73,7 +75,7 @@ class CaptureCamera: public QObject
 
     cv::Moments centerMoment;
     glm::vec2 centerTemp;
-    glm::vec2 centerRelativeTemp;
+    cv::Point2f  centerRelativeTemp;
     std::vector<glm::vec2> centerOfContour;
 
     glm::vec3 directionTemp;
@@ -81,11 +83,14 @@ class CaptureCamera: public QObject
 
     CamWidget * QtWidgetViewer;
 
-    //undistortion
+    //all matrices
     cv::Mat m_distortionCoeffs;
-    cv::Mat m_cameraProjectionMatrix;
-    cv::Mat m_cameraExtrinsicMatrix;
-    cv::Mat m_cameraIntrinsicMatrix;
+    cv::Mat m_projectionMatrix;
+    cv::Mat m_rotationMatrix;
+    cv::Mat m_CameraMatrix;
+    cv::Mat m_IntrinsicMatrix;
+
+    QHash<int, QHash<int, glm::vec3>> m_pixelLines; // reserver , squeeze
 
 public:
     //public parameters
@@ -135,6 +140,12 @@ public:
     cv::Mat cameraMatrix() const;
     void setCameraMatrix(const cv::Mat &cameraMatrix);
 
+    cv::Mat cameraProjectionMatrix() const;
+    void setCameraProjectionMatrix(const cv::Mat &cameraProjectionMatrix);
+
+    cv::Mat IntrinsicMatrix() const;
+    void setIntrinsicMatrix(const cv::Mat &IntrinsicMatrix);
+
 public slots:
     void activeCam(bool active);
 
@@ -143,7 +154,6 @@ public slots:
     void thresholdCam(size_t threshold);
 
 private:
-    void makeCameraMatrix();
     
     void GetUndisortedPosition();
     void UseFilter();
@@ -151,6 +161,7 @@ private:
     void CreateLines();
     void ComputeDirVector();
     void NormalizeContours();
+    void createExtrinsicMatrix();
 
 signals:
     void imageRead(cv::Mat image);

@@ -246,8 +246,8 @@ void OpenGLWindow::countView()
 void OpenGLWindow::drawLine(Line l)
 {
     glBegin(GL_LINES);
-    glVertex3f(l.position.x, l.position.z, -l.position.y);
-    glVertex3f(l.position.x+2*l.directionVector.x, l.position.z+2*l.directionVector.z, -1*(l.position.y+2*l.directionVector.y));
+    glVertex3f(l.m_position.x, l.m_position.z, -l.m_position.y);
+    glVertex3f(l.m_position.x+2*l.m_directionVector.x, l.m_position.z+2*l.m_directionVector.z, -1*(l.m_position.y+2*l.m_directionVector.y));
     glEnd();
 }
 

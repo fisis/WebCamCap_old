@@ -259,6 +259,7 @@ void Room::MakeTopology()
 
     vec3 pos1, pos2;
     vec3 dir1, dir2;
+    cv::Mat intr1, intr2;
 
     float min = 181.0f, temp_angle;
     int min_index = -1;
@@ -269,12 +270,14 @@ void Room::MakeTopology()
 
         pos1 = cameras[i]->getPosition();
         dir1 = cameras[i]->getDirVector();
+        intr1 = cameras[i]->cameraMatrix();
 
         for(size_t j = i+1; j < cameras.size(); j++)
         {
 
             pos2 = cameras[j]->getPosition();
             dir2 = cameras[j]->getDirVector();
+            intr2 = cameras[j]->cameraMatrix();
 
             temp_angle = Line::LineAngle(vec2(dir1.x, dir1.y),vec2(dir2.x, dir2.y));
 
@@ -287,7 +290,10 @@ void Room::MakeTopology()
 
         if(min_index != -1)
         {
-            camTopology.push_back(Edge(i,min_index, epsilon));
+            Edge edge(i,min_index, epsilon);
+            //edge.setFundamentalMatrix(pos1, dir1, intr1, pos2, dir2, intr2);
+
+            camTopology.push_back(edge);
 
         }
     }
@@ -340,7 +346,7 @@ void Room::TurnOffCamera(size_t index)
 
 void Room::CaptureAnimationStart()
 {
-    actualAnimation = new Animation(roomDimensions, epsilon);
+    actualAnimation = new Animation(roomDimensions);
 
     captureAnimation = true;
 }
@@ -469,6 +475,8 @@ void Room::ResultReady(std::vector<Line> lines)
 
                 results[i] = lines;
             }
+
+            break;
         }
     }
 
@@ -570,9 +578,8 @@ void Room::Intersection(Edge &camsEdge)
              }
          }
      }
-
-     camsEdge.a.clear();
-     camsEdge.b.clear();
+    camsEdge.a.clear();
+    camsEdge.b.clear();
 }
 
 void Room::Intersections()
@@ -643,3 +650,63 @@ void Room::handleConnection()
     socket = server->nextPendingConnection();
     connect(socket, SIGNAL(disconnected()), socket, SLOT(deleteLater()));
 }
+
+/*
+void Edge::setFundamentalMatrix(glm::vec3 camPos1, glm::vec3 camRot1, cv::Mat intrinsicMatrix1, glm::vec3 camPos2, glm::vec3 camRot2, cv::Mat intrinsicMatrix2)
+{
+    camRot1 = glm::normalize(camRot1);
+    camRot2 = glm::normalize(camRot2);
+
+    vec3 v = glm::cross(camRot1, camRot2);
+
+    float s = glm::length(v);
+
+    float c = glm::dot(camRot1, camRot2);
+
+    cv::Mat diag = cv::Mat::eye(3,3, CV_32F);
+
+    cv::Mat vx = cv::Mat::zeros(3,3, CV_32F);
+
+    vx.at<float>(0,1) = - v.z;
+    vx.at<float>(1,0) = v.z;
+
+    vx.at<float>(0,2) = v.y;
+    vx.at<float>(2,0) = -v.y;
+
+    vx.at<float>(1,2) = -v.x;
+    vx.at<float>(2,1) = v.x;
+
+    std::cout << "vx" << std::endl << vx << std::endl;
+
+    cv::Mat rotMatrix =  diag + vx + vx*vx*((1-c)/s*s);
+
+    std::cout << "rotation matrix" << std::endl << rotMatrix << std::endl;
+
+    vec3 t = camPos2 - camPos1;
+
+    cv::Mat tx = cv::Mat::zeros(3,3, CV_32F);
+
+    tx.at<float>(0,1) = -t.z;
+    tx.at<float>(1,0) = t.z;
+
+    tx.at<float>(0,2) = t.y;
+    tx.at<float>(2,0) = -t.y;
+
+    tx.at<float>(1,2) = -t.x;
+    tx.at<float>(2,1) = t.x;
+
+    cv::Mat essentialMatrix = rotMatrix * tx;
+    std::cout << "essential matrix" << std::endl << essentialMatrix << std::endl;
+
+    this->m_fundamentalMatrix = intrinsicMatrix2.t().inv(DECOMP_SVD) * essentialMatrix * intrinsicMatrix1.inv(DECOMP_SVD);
+
+    cv::Mat point = cv::Mat::ones(3,1, CV_32F);
+    point.at<float>(0,0) = 331;
+    point.at<float>(1,0) = 301;
+
+    std::cout << "point mul" << point.t() * m_fundamentalMatrix * point << std::endl;
+
+
+    std::cout << "fundamentalMatrix" << std::endl << m_fundamentalMatrix << std::endl;
+}
+*/

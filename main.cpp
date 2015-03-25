@@ -27,6 +27,7 @@
 
 QCoreApplication *app;
 
+
 bool clean = false;
 
 void cleanup(int)
@@ -62,6 +63,21 @@ int main(int argc, char *argv[])
 
     signal(SIGINT, cleanup);
     signal(SIGSEGV, cleanup);
+/*
+    Edge edge(0, 1, 2);
+    cv::Mat m1,m2;
 
+    cv::FileStorage file("Genius.yaml", cv::FileStorage::READ);
+    file["camera_matrix"] >> m1;
+    m1.convertTo(m1, CV_32F);
+    m2 = m1;
+
+    edge.setFundamentalMatrix(glm::vec3(0, 0, 0), glm::vec3(50, 100, 0), m1, glm::vec3(50, 0, 0), glm::vec3(-50, 100, 0) , m2);
+
+    edge.a.push_back({331,301});
+    edge.b.push_back({331,301});
+
+    Room::Intersection(edge);
+*/
     return a.exec();
 }

@@ -32,31 +32,31 @@ using glm::dot;
 Line::Line(vec3 pos, vec3 vec)
 {
     found = false;
-    position = pos;
-    directionVector = vec;
-    intersections = 0;
+    m_position = pos;
+    m_directionVector = vec;
+    m_numberOfIntersections = 0;
 }
 
 void Line::ClosestPointsOnTwoLines(Line l1, Line l2, vec3 &closestPointLine1, vec3 &closestPointLine2)
 {
-    float a = dot(l1.directionVector, l1.directionVector);
-    float b = dot(l1.directionVector, l2.directionVector);
-    float e = dot(l2.directionVector, l2.directionVector);
+    float a = dot(l1.m_directionVector, l1.m_directionVector);
+    float b = dot(l1.m_directionVector, l2.m_directionVector);
+    float e = dot(l2.m_directionVector, l2.m_directionVector);
 
     float d = a*e - b*b;
 
     // if lines are not parallel
     if(d != 0)
     {
-        vec3 r = l1.position - l2.position;
-        float c = dot(l1.directionVector, r);
-        float f = dot(l2.directionVector, r);
+        vec3 r = l1.m_position - l2.m_position;
+        float c = dot(l1.m_directionVector, r);
+        float f = dot(l2.m_directionVector, r);
 
         float s = (b*f - c*e) / d;
         float t = (a*f - c*b) / d;
 
-        closestPointLine1 = l1.position + l1.directionVector * s;
-        closestPointLine2 = l2.position + l2.directionVector * t;
+        closestPointLine1 = l1.m_position + l1.m_directionVector * s;
+        closestPointLine2 = l2.m_position + l2.m_directionVector * t;
 
         std::cout << DistanceTwoPoints(closestPointLine1, closestPointLine2) << std::endl;
     }
@@ -64,12 +64,12 @@ void Line::ClosestPointsOnTwoLines(Line l1, Line l2, vec3 &closestPointLine1, ve
 
 vec3 Line::IntersectionLinePlane(Line L, Line Plane)
 {
-    float d = Plane.directionVector.x * -Plane.position.x + Plane.directionVector.y * -Plane.position.y  + Plane.directionVector.z * -Plane.position.z;
+    float d = Plane.m_directionVector.x * -Plane.m_position.x + Plane.m_directionVector.y * -Plane.m_position.y  + Plane.m_directionVector.z * -Plane.m_position.z;
 
-    float t =       -(Plane.directionVector.x * L.position.x + Plane.directionVector.y * L.position.y + Plane.directionVector.z * L.position.z + d)/
-                       (Plane.directionVector.x * L.directionVector.x + Plane.directionVector.y * L.directionVector.y + Plane.directionVector.z * L.directionVector.z);
+    float t =       -(Plane.m_directionVector.x * L.m_position.x + Plane.m_directionVector.y * L.m_position.y + Plane.m_directionVector.z * L.m_position.z + d)/
+                       (Plane.m_directionVector.x * L.m_directionVector.x + Plane.m_directionVector.y * L.m_directionVector.y + Plane.m_directionVector.z * L.m_directionVector.z);
 
-    return L.position + t * L.directionVector;
+    return L.m_position + t * L.m_directionVector;
 }
 
 float Line::DistanceTwoPoints(vec3 point1, vec3 point2)
@@ -83,11 +83,11 @@ float Line::DistancePointPlane(vec3 Point, Line Plane)
 {
     float    sb, sn, sd;
 
-    sn = -dot( Plane.directionVector, (Point - Plane.position));
-    sd = dot(Plane.directionVector, Plane.directionVector);
+    sn = -dot( Plane.m_directionVector, (Point - Plane.m_position));
+    sd = dot(Plane.m_directionVector, Plane.m_directionVector);
     sb = sn / sd;
 
-    vec3 intersection = Point + sb * Plane.directionVector;
+    vec3 intersection = Point + sb * Plane.m_directionVector;
     return DistanceTwoPoints(Point, intersection);
 }
 
@@ -98,7 +98,7 @@ vec3 Line::AveragePoint(vec3 point1, vec3 point2)
 
 float Line::LineAngle(Line l1, Line l2)
 {
-    return acos( dot(l1.directionVector, l2.directionVector)/sqrt(glm::length2(l1.directionVector) * glm::length2(l2.directionVector)) );
+    return acos( dot(l1.m_directionVector, l2.m_directionVector)/sqrt(glm::length2(l1.m_directionVector) * glm::length2(l2.m_directionVector)) );
 }
 
 float Line::LineAngle(vec2 v1, vec2 v2)
@@ -114,7 +114,7 @@ vec3 Line::Intersection(Line &l1, Line &l2, float Epsilon)
     Line::ClosestPointsOnTwoLines(l1, l2, point1, point2);
     if(Epsilon > Line::DistanceTwoPoints(point1, point2))
     {
-        l2.intersections += 1;
+        l2.m_numberOfIntersections += 1;
         l2.found = true;
 
         return Line::AveragePoint(point1, point2);
@@ -143,7 +143,7 @@ std::ostream& operator << (std::ostream &stream,const vec2 &position)
 
 std::ostream& operator <<(std::ostream &stream, const Line &line)
 {
-    stream << "Line position: " << line.position << "direction: " << line.directionVector;
+    stream << "Line position: " << line.m_position << "direction: " << line.m_directionVector;
 
     return stream;
 }

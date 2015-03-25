@@ -36,10 +36,15 @@ typedef struct Edge
     Edge(int a, int b, float Eps): index_a(a), index_b(b), epsilon(Eps) {}
 
     int index_a, index_b;
-    std::vector<Line> a;
-    std::vector<Line> b;
+    std::vector<Line> a ,b;
     float epsilon;
     std::vector <glm::vec3> points;
+    //cv::Mat points3D1, points3D2;
+
+    //cv::Mat m_fundamentalMatrix;
+
+    //void setFundamentalMatrix(glm::vec3 camPos1, glm::vec3 camRot1, cv::Mat intrinsicMatrix1, glm::vec3 camPos2, glm::vec3 camRot2, cv::Mat intrinsicMatrix2);
+
 } Edge;
 
 class Room : public QObject
@@ -130,6 +135,8 @@ public:
     void setThreshold(int value);
     void setBrighnessOfCamera(int value);
 
+    static void Intersection(Edge &camsEdge);
+
 signals:
     void startWork();
     void stopWork();
@@ -144,7 +151,7 @@ private:
     void sendMessage(std::vector<glm::vec3> points);
     void sendMessage(std::vector<glm::vec2> points);
     void sendMessage(std::string str);
-    static void Intersection(Edge &camsEdge);
+
     void Intersections();
 
     void weldPoints(std::vector<glm::vec3> &points);

@@ -27,20 +27,17 @@
 
 class Frame
 {
-    int elapsedTime;
+    int m_elapsedTime;
 
-    std::vector<Point> points;
-    std::vector<std::vector<Line> > lines;
+    std::vector<Point> m_points;
+    std::vector<std::vector<Line> > m_lines;
 
 public:
     Frame(int elapsed, std::vector<Point> pts, std::vector<std::vector<Line>> lines = std::vector<std::vector<Line>>());
 
-    std::vector<Point> getPoints() const {return points;}
-    std::vector<std::vector<Line> > getLines() const {return lines;}
-    int getElapsedTime() const {return elapsedTime;}
-
-
-
+    std::vector<Point> getPoints() const {return m_points;}
+    std::vector<std::vector<Line> > getLines() const {return m_lines;}
+    int getElapsedTime() const {return m_elapsedTime;}
 };
 
 std::ostream & operator << (std::ostream &stream, Frame frame);

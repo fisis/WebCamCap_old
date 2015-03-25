@@ -79,8 +79,9 @@ void AddCamera::on_buttonBox_accepted()
 
     cam->resolution = vec2(ui->FrameCols->text().toInt(), ui->FrameRows->text().toInt());
 
-    cam->setDistortionCoeffs(m_coefficient);
-    cam->setCameraMatrix(m_cameraMatrix);
+
+    //cam->setDistortionCoeffs(m_coefficient);
+    //cam->setCameraMatrix(m_cameraMatrix);
 
     if(warning)
     {

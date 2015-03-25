@@ -23,22 +23,24 @@
 #include "capturecamera.h"
 
 //#define GLM_FORCE_RADIANS
-#include <glm/gtx/rotate_vector.hpp>
+//#include <glm/gtx/rotate_vector.hpp>
 #include <glm/ext.hpp>
 
 #include <QMessageBox>
 #include <QVBoxLayout>
+#include <QMatrix4x4>
 
 using namespace cv;
 using glm::vec2;
 using glm::vec3;
 
+/*
 #ifdef _MSC_VER
     using glm::tvec3;
 #else
     using glm::detail::tvec3;
 #endif
-
+*/
 
 
 cv::Mat CaptureCamera::distortionCoeffs() const
@@ -53,12 +55,34 @@ void CaptureCamera::setDistortionCoeffs(const cv::Mat &distortionCoeffs)
 
 cv::Mat CaptureCamera::cameraMatrix() const
 {
-    return m_cameraIntrinsicMatrix;
+    return m_IntrinsicMatrix;
 }
 
 void CaptureCamera::setCameraMatrix(const cv::Mat &cameraMatrix)
 {
-    m_cameraIntrinsicMatrix = cameraMatrix;
+    cameraMatrix.convertTo(m_IntrinsicMatrix, CV_32F);
+
+    m_projectionMatrix = m_IntrinsicMatrix * m_CameraMatrix;
+}
+
+cv::Mat CaptureCamera::cameraProjectionMatrix() const
+{
+    return m_projectionMatrix;
+}
+
+void CaptureCamera::setCameraProjectionMatrix(const cv::Mat &cameraProjectionMatrix)
+{
+    m_projectionMatrix = cameraProjectionMatrix;
+}
+
+cv::Mat CaptureCamera::IntrinsicMatrix() const
+{
+    return m_IntrinsicMatrix;
+}
+
+void CaptureCamera::setIntrinsicMatrix(const cv::Mat &IntrinsicMatrix)
+{
+    m_IntrinsicMatrix = IntrinsicMatrix;
 }
 CaptureCamera::CaptureCamera(vec3 pos, vec3 roomDimensions, std::string name, int ID, float angle, bool backgroudSubstractor)
 {
@@ -72,7 +96,8 @@ CaptureCamera::CaptureCamera(vec3 pos, vec3 roomDimensions, std::string name, in
     thresholdValue = 255;
     this->roomDimensions = roomDimensions;
     ComputeDirVector();
-    makeCameraMatrix();
+
+    createExtrinsicMatrix();
 
     std::cout << "Vector to middle: " << directionVectorToMiddle << std::endl;
 
@@ -151,10 +176,13 @@ std::vector<vec2> CaptureCamera::RecordNextFrame2D()
 
 void CaptureCamera::UseFilter()
 {
-    if(!m_distortionCoeffs.empty() && !m_cameraIntrinsicMatrix.empty())
+
+/*
+    if(!m_distortionCoeffs.empty() && !m_IntrinsicMatrix.empty())
     {
         GetUndisortedPosition();
     }
+*/
 
     if(ROI)
     {
@@ -207,8 +235,7 @@ void CaptureCamera::GetUndisortedPosition()
 
     frame.copyTo(framein);
 
-    cv::undistort(framein, frame, m_cameraIntrinsicMatrix, m_distortionCoeffs);
-
+    cv::undistort(framein, frame, m_IntrinsicMatrix, m_distortionCoeffs);
 }
 
 void CaptureCamera::MiddleOfContours()
@@ -241,12 +268,43 @@ void CaptureCamera::CreateLines()
     for(size_t i = 0; i < centerOfContour.size(); i++)
     {
         //vypocitam stred contury vzhľadom ku stredu obrazovky
-        centerRelativeTemp = vec2(centerOfContour[i].x - frame.cols/2,centerOfContour[i].y - frame.rows/2);
+        //centerRelativeTemp = vec2(centerOfContour[i].x - frame.cols/2,centerOfContour[i].y - frame.rows/2);
+
+        centerRelativeTemp = cv::Point2f(centerOfContour[i].x - frame.cols/2,centerOfContour[i].y - frame.rows/2);
+        /*
         //rotacie
         directionTemp = glm::rotateZ((tvec3<double, (glm::precision)0u>) directionVectorToMiddle, (-centerRelativeTemp.x * anglePerPixel));//*0.0174532925);
 
         directionTemp = glm::rotateX((tvec3<double, (glm::precision)0u>) directionTemp , (-centerRelativeTemp.y * anglePerPixel));//*0.0174532925);
         lines.push_back(Line(position , directionTemp));
+        */
+
+        cv::Mat m_invertedRotationMatrix =  m_rotationMatrix.inv();
+
+
+        QMatrix4x4 rotCamMatrix;
+        QMatrix4x4 rotCamInvertedMatrix;
+
+        for(size_t i = 0; i < 4; i++)
+            for(size_t j = 0; j < 4; j++)
+            {
+                rotCamMatrix(i,j) = m_rotationMatrix.at<float>(i,j);
+                rotCamInvertedMatrix(i,j) = m_invertedRotationMatrix.at<float>(i,j);
+            }
+
+        QMatrix4x4  rotMatrix;
+        rotMatrix.rotate((-centerRelativeTemp.y * anglePerPixel), 1,0,0);
+
+        QMatrix4x4 rotMatrix2;
+        rotMatrix2.rotate((-centerRelativeTemp.x * anglePerPixel), 0, 1, 0);
+
+        QVector4D vector(directionVectorToMiddle.x, directionVectorToMiddle.y, directionVectorToMiddle.z, 0);
+
+        QVector4D result = rotCamInvertedMatrix* rotMatrix2 * rotMatrix * rotCamMatrix * vector;
+
+        vec3 final = vec3(result.x(), result.y(), result.z());
+
+        lines.push_back({position,final});
     }
 }
 
@@ -261,6 +319,45 @@ void CaptureCamera::NormalizeContours()
     {
          centerOfContour[i] *= vec2(1.0/(float) frame.cols, 1.0f / (float) frame.rows);
     }
+}
+
+void CaptureCamera::createExtrinsicMatrix()
+{
+    m_rotationMatrix = cv::Mat::eye(4, 4, CV_32F);
+
+    glm::vec3 normDirVector = glm::normalize(directionVectorToMiddle); //L
+
+    m_rotationMatrix.at<float>(2,0) = -normDirVector.x;
+    m_rotationMatrix.at<float>(2,1) = -normDirVector.y;
+    m_rotationMatrix.at<float>(2,2) = -normDirVector.z;
+
+    glm::vec3 sVector = glm::cross(normDirVector, glm::vec3(0,0,1));
+    glm::vec3 normSVector = glm::normalize(sVector);
+
+    m_rotationMatrix.at<float>(0,0) = normSVector.x;
+    m_rotationMatrix.at<float>(0,1) = normSVector.y;
+    m_rotationMatrix.at<float>(0,2) = normSVector.z;
+
+    glm::vec3 uVector = glm::cross(normSVector, normDirVector);
+
+    m_rotationMatrix.at<float>(1,0) = uVector.x;
+    m_rotationMatrix.at<float>(1,1) = uVector.y;
+    m_rotationMatrix.at<float>(1,2) = uVector.z;
+
+
+    cv::Mat tMatrix;
+    tMatrix = cv::Mat::eye(4,4, CV_32F);
+
+    tMatrix.at<float>(0,3) = -position.x;
+    tMatrix.at<float>(1,3) = -position.y;
+    tMatrix.at<float>(2,3) = -position.z;
+
+    //float myAngle = Line::LineAngle(Line(glm::vec3(0,0,0), glm::vec3(1, 0, 0)), Line(glm::vec3(0,0,0), directionVectorToMiddle));
+
+    cv::Mat temp = m_rotationMatrix * tMatrix;
+    m_CameraMatrix = temp(Rect(0,0, 4, 3));
+
+    std::cout << m_CameraMatrix << std::endl;
 }
 
 cv::Mat CaptureCamera::myColorThreshold(cv::Mat input, Mat dilateKernel , int thresholdValue, int maxValue)
@@ -314,24 +411,6 @@ void CaptureCamera::turnedOnCam(bool turnedOn)
 void CaptureCamera::thresholdCam(size_t threshold)
 {
     setThreshold(threshold);
-}
-
-void CaptureCamera::makeCameraMatrix()
-{
-    cv::Mat matrix;
-
-    matrix = cv::Mat::zeros(4, 4, CV_32F);
-
-    matrix.at<float>(0,3) = position.x;
-    matrix.at<float>(1,3) = position.y;
-    matrix.at<float>(2,3) = position.z;
-    matrix.at<float>(3,3) = 1;
-
-    float myAngle = Line::LineAngle(Line(glm::vec3(0,0,0), glm::vec3(1, 0, 0)), Line(glm::vec3(0,0,0), directionVectorToMiddle));
-    
-    std::cout << matrix << std::endl << myAngle << std::endl;
-
-
 }
 
 void CaptureCamera::TurnOn()

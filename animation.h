@@ -27,34 +27,24 @@
 
 class Animation
 {
-    glm::vec3 roomDims;
-    float roomEpsilon;
-    float frameRate;
+    glm::vec3 m_roomDimensions;
+    float m_frameRate = 0.0f;
 
-    std::string name;
-    std::vector<Frame> frames;
+    std::string m_name;
+    std::vector<Frame> m_frames;
 public:
-    Animation(glm::vec3 roomdims, float Epsilon, std::string name = "Animation_def");
+    Animation(glm::vec3 roomdims, std::string name = "Animation Default");
 
     void AddFrame(Frame k);
-    void AddFrame(std::vector<Point> pts, std::vector<std::vector<Line> > lines, int elapsed);
     void Save(std::string file);
     void PostProcess();
 
-    //getters
-    std::string getName() const {return name;}
-    float getFrameRate() const {return frameRate;}
-    int getLength() const {return  frames.size();}
+    std::string getName() const {return m_name;}
+    float getFrameRate() const {return m_frameRate;}
+    int getLength() const {return  m_frames.size();}
 
-    //setters
-    void setName(std::string name) {this->name = name;}
+    void setName(std::string name) {m_name = name;}
 
-private:
-    void SaveBVH(std::ofstream &outputFile);
-
-    //postprocessing
-    void handleBadFrames(std::vector<size_t> frames);
-    void findStructure();
 };
 
 #endif // ANIMATION_H

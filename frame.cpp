@@ -25,9 +25,9 @@
 
 Frame::Frame(int elapsed, std::vector<Point> pts, std::vector<std::vector<Line> > lines)
 {
-    points = pts;
-    this->lines = lines;
-    elapsedTime = elapsed;
+    m_points = pts;
+    m_lines = lines;
+    m_elapsedTime = elapsed;
 }
 
 std::ostream &operator <<(std::ostream &stream, Frame frame)
