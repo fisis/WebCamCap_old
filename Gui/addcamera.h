@@ -38,25 +38,27 @@ class AddCamera : public QDialog
 {
     Q_OBJECT
 
-    CaptureCamera *cam;
-    cv::VideoCapture temp;
-    glm::vec3 roomDims;
-    cv::Mat frame, mask;
-    bool record, warning;
-    QProcess *m_process;
+    CaptureCamera *m_camera = nullptr;
+    cv::VideoCapture m_videoCaptureTemp;
+    glm::vec3 m_roomDimensions;
+    cv::Mat m_frame, m_mask;
+    bool m_cameraRecording = false;
+    bool m_tooHighValueWarning = false;
+
+    QProcess *m_calibApplication = nullptr;
 
     cv::Mat m_cameraMatrix;
     cv::Mat m_coefficient;
 
 public:
-    explicit AddCamera(QWidget *parent = 0, glm::vec3 roomDims = glm::vec3(0.0f,0.0f, 0.0f));
+    explicit AddCamera(QWidget *parent = 0, glm::vec3 m_roomDimensions = glm::vec3(0.0f,0.0f, 0.0f));
     ~AddCamera();
 
-    CaptureCamera* getCam() const {return cam;}
+    CaptureCamera* getCam() const {return m_camera;}
 
 private slots:
 
-    void readYaml(int status);
+    void readYaml(int);
 
     void on_buttonBox_accepted();
 

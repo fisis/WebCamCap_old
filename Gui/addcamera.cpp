@@ -37,53 +37,49 @@ AddCamera::AddCamera(QWidget *parent, vec3 roomDims) :
     QDialog(parent),
     ui(new Ui::AddCamera)
 {
-    cam = nullptr;
-    m_process = nullptr;
     ui->setupUi(this);
-    record = false;
-    this->roomDims = roomDims;
     this->setWindowTitle("Add new Camera");
-    warning = false;
 
+    m_roomDimensions = roomDims;
 }
 
 AddCamera::~AddCamera()
 {
-    if(m_process)
+    if(m_calibApplication)
     {
-        delete m_process;
+        delete m_calibApplication;
     }
 
     delete ui;
 }
 
-void AddCamera::readYaml(int status)
+void AddCamera::readYaml(int )
 {
     readConfigFile(ui->Name->text());
 }
 
 void AddCamera::on_buttonBox_accepted()
 {
-    if(cam)
+    if(m_camera)
     {
-        delete cam;
+        delete m_camera;
     }
 
-    cam = new CaptureCamera(vec3(ui->X->text().toFloat(),
+    m_camera = new CaptureCamera(vec3(ui->X->text().toFloat(),
                                  ui->Y->text().toFloat(),
                                  ui->Z->text().toFloat()),
-                            roomDims,
+                            m_roomDimensions,
                             ui->Name->text().toStdString(),
                             ui->deviceUSB_ID->text().toInt(),
                             ui->zorny_uhol->text().toFloat(), ui->useBackgroundSub->isChecked());
 
-    cam->resolution = vec2(ui->FrameCols->text().toInt(), ui->FrameRows->text().toInt());
+    m_camera->resolution = vec2(ui->FrameCols->text().toInt(), ui->FrameRows->text().toInt());
 
 
     //cam->setDistortionCoeffs(m_coefficient);
     //cam->setCameraMatrix(m_cameraMatrix);
 
-    if(warning)
+    if(m_tooHighValueWarning)
     {
         QMessageBox msgBox;
         msgBox.setWindowTitle(" ");
@@ -97,8 +93,8 @@ void AddCamera::on_buttonBox_accepted()
         if(status == QMessageBox::Yes)
         {
             Mat ex = getStructuringElement(MORPH_ELLIPSE, Size(20,20));
-            morphologyEx(mask, mask, MORPH_DILATE, ex);
-            cam->setROI(255 - mask);
+            morphologyEx(m_mask, m_mask, MORPH_DILATE, ex);
+            m_camera->setROI(255 - m_mask);
         }
         else if(status == QMessageBox::Cancel)
         {
@@ -120,9 +116,9 @@ void AddCamera::on_Play_ID_clicked(bool checked)
 {
     if(checked)
     {
-        record = true;
+        m_cameraRecording = true;
 
-        if(!temp.open(ui->deviceUSB_ID->text().toInt()))
+        if(!m_videoCaptureTemp.open(ui->deviceUSB_ID->text().toInt()))
         {
             QMessageBox msgBox;
             msgBox.setWindowTitle("");
@@ -133,8 +129,8 @@ void AddCamera::on_Play_ID_clicked(bool checked)
             ui->deviceUSB_ID->setEnabled(true);
             return;
         }
-        ui->FrameCols->setText(QString::number(temp.get(CV_CAP_PROP_FRAME_WIDTH)));
-        ui->FrameRows->setText(QString::number(temp.get(CV_CAP_PROP_FRAME_HEIGHT)));
+        ui->FrameCols->setText(QString::number(m_videoCaptureTemp.get(CV_CAP_PROP_FRAME_WIDTH)));
+        ui->FrameRows->setText(QString::number(m_videoCaptureTemp.get(CV_CAP_PROP_FRAME_HEIGHT)));
 
         recording();
     }
@@ -146,28 +142,28 @@ void AddCamera::on_Play_ID_clicked(bool checked)
 
 void AddCamera::recording()
 {
-    warning = false;
+    m_tooHighValueWarning = false;
 
-    while(record)
+    while(m_cameraRecording)
     {
         QCoreApplication::processEvents();
 
-        temp >> frame;
-        mask = CaptureCamera::myColorThreshold(frame, getStructuringElement(MORPH_ELLIPSE, Size(2,2)), 220, 255);
+        m_videoCaptureTemp >> m_frame;
+        m_mask = CaptureCamera::myColorThreshold(m_frame, getStructuringElement(MORPH_ELLIPSE, Size(2,2)), 220, 255);
 
-        for(int i = 0; i < frame.rows; i++)
+        for(int i = 0; i < m_frame.rows; i++)
         {
-            for(int j = 0; j < frame.cols; j++)
+            for(int j = 0; j < m_frame.cols; j++)
             {
-                if(mask.at<uchar>(i,j) != 0)
+                if(m_mask.at<uchar>(i,j) != 0)
                 {
-                    frame.at<Vec3b>(i,j) = Vec3b(0,0,255);
-                    warning = true;
+                    m_frame.at<Vec3b>(i,j) = Vec3b(0,0,255);
+                    m_tooHighValueWarning = true;
                 }
             }
         }
 
-        if(warning)
+        if(m_tooHighValueWarning)
         {
             ui->warning->setText("Some areas are too bright");
         }
@@ -176,21 +172,21 @@ void AddCamera::recording()
             ui->warning->setText("");
         }
 
-        ui->glImage->showImage(frame);
+        ui->glImage->showImage(m_frame);
 
         cv::waitKey(10);
 
-        warning = false;
+        m_tooHighValueWarning = false;
     }
 }
 
 void AddCamera::endRecording()
 {
-    if(record)
+    if(m_cameraRecording)
     {
-        record = false;
+        m_cameraRecording = false;
         ui->warning->setText("");
-        temp.release();
+        m_videoCaptureTemp.release();
     }
 }
 
@@ -205,12 +201,12 @@ void AddCamera::readConfigFile(QString path)
 
 void AddCamera::on_FrameCols_editingFinished()
 {
-    temp.set(CV_CAP_PROP_FRAME_WIDTH, ui->FrameCols->text().toInt());
+    m_videoCaptureTemp.set(CV_CAP_PROP_FRAME_WIDTH, ui->FrameCols->text().toInt());
 }
 
 void AddCamera::on_FrameRows_editingFinished()
 {
-    temp.set(CV_CAP_PROP_FRAME_HEIGHT, ui->FrameRows->text().toInt());
+    m_videoCaptureTemp.set(CV_CAP_PROP_FRAME_HEIGHT, ui->FrameRows->text().toInt());
 }
 
 void AddCamera::on_pushButton_clicked()
@@ -227,10 +223,10 @@ void AddCamera::on_pushButton_clicked()
     arguments << "-w" << "7" << "-h" << "5" << "-pt" << "chessboard" << "-n" << "50";
     arguments << "-o" << ui->Name->text() + ".yaml";
 
-    m_process = new QProcess(this);
-    m_process->start(QDir::currentPath() + "/Calib",  arguments);
+    m_calibApplication = new QProcess(this);
+    m_calibApplication->start(QDir::currentPath() + "/Calib",  arguments);
 
-    connect(m_process, SIGNAL(finished(int)), this, SLOT(readYaml(int)));
+    connect(m_calibApplication, SIGNAL(finished(int)), this, SLOT(readYaml(int)));
 }
 
 void AddCamera::on_readYAML_clicked()

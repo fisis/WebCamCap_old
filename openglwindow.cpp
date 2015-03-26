@@ -270,19 +270,19 @@ void OpenGLWindow::drawJoints()
     for(size_t i = 0; i < joints.size(); i++)
     {
         //std::cout << joints[i].ID << " ";
-        glColor3ub(randomColors[joints[i].ID][0],randomColors[joints[i].ID][1],randomColors[joints[i].ID][2]);
+        glColor3ub(randomColors[joints[i].m_id][0],randomColors[joints[i].m_id][1],randomColors[joints[i].m_id][2]);
 
         if(twoDimensions)
         {
-            glTranslatef(joints[i].position.x*100, joints[i].position.z, -joints[i].position.y*100);
+            glTranslatef(joints[i].m_position.x*100, joints[i].m_position.z, -joints[i].m_position.y*100);
             glutSolidSphere(3, 8, 8);
-            glTranslatef(-joints[i].position.x*100, -joints[i].position.z, joints[i].position.y*100);
+            glTranslatef(-joints[i].m_position.x*100, -joints[i].m_position.z, joints[i].m_position.y*100);
         }
         else
         {
-            glTranslatef(joints[i].position.x, joints[i].position.z, -joints[i].position.y);
+            glTranslatef(joints[i].m_position.x, joints[i].m_position.z, -joints[i].m_position.y);
             glutSolidSphere(3, 8, 8);
-            glTranslatef(-joints[i].position.x, -joints[i].position.z, joints[i].position.y);
+            glTranslatef(-joints[i].m_position.x, -joints[i].m_position.z, joints[i].m_position.y);
         }
 
     }

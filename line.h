@@ -31,22 +31,21 @@
 
 typedef struct Pnt
 {
-    size_t ID;
-    glm::vec3 position;
+    size_t m_id;
+    glm::vec3 m_position;
 
 } Point;
 
 class Line
 {
 public:
-    bool found;
+    bool found = false;
     glm::vec3 m_position;
     glm::vec3 m_directionVector;
 
-    size_t m_numberOfIntersections;
+    size_t m_numberOfIntersections = 0;
 
     Line(glm::vec3 pos, glm::vec3 vec);
-
 
     static void ClosestPointsOnTwoLines(Line l1, Line l2, glm::vec3 &closestPointLine1, glm::vec3 &closestPointLine2);
     static glm::vec3 IntersectionLinePlane(Line l1, Line Plane);

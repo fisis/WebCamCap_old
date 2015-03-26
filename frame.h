@@ -28,7 +28,6 @@
 class Frame
 {
     int m_elapsedTime;
-
     std::vector<Point> m_points;
     std::vector<std::vector<Line> > m_lines;
 

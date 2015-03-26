@@ -18,13 +18,6 @@ void PointChecker::setNumOfPoints(const size_t &value)
 
 PointChecker::PointChecker()
 {
-    maxNoFrameDuration = 30;
-
-    noFrameDuration = 0;
-    wrongFrameDuration = 0;
-    maxIndex = 0;
-    numOfPoints = 1;
-    state = PointCount::NO;
 }
 
 std::vector<Point> PointChecker::solvePointIDs(std::vector<vec3> points)
@@ -87,7 +80,7 @@ std::vector<Point> PointChecker::solvePointIDs(std::vector<vec2> points)
     return solvePointIDs(pts);
 }
 
-std::vector<Point> PointChecker::handleNo(std::vector<vec3> points)
+std::vector<Point> PointChecker::handleNo(std::vector<vec3> &points)
 {
     std::vector<Point> pts;
 
@@ -125,7 +118,7 @@ std::vector<Point> PointChecker::handleNo(std::vector<vec3> points)
     return pts;
 }
 
-std::vector<Point> PointChecker::handleNotEnough(std::vector<vec3> points)
+std::vector<Point> PointChecker::handleNotEnough(std::vector<vec3> &points)
 {
     std::vector<Point> pts;
 
@@ -189,7 +182,7 @@ std::vector<Point> PointChecker::handleGood(std::vector<vec3> &points)
             bool ok = false;
             for(size_t j = 0; j < pts.size(); j++)
             {
-                if(points[i] == pts[j].position)
+                if(points[i] == pts[j].m_position)
                 {
                     ok = true;
                     break;
@@ -215,7 +208,7 @@ std::vector< std::vector<double>> PointChecker::createDistanceMap(std::vector<Po
         std::vector<double> vec;
         for(size_t j = 0; j < points.size(); j++)
         {
-            vec.push_back( glm::distance(lastPoints[i].position, points[j]));
+            vec.push_back( glm::distance(lastPoints[i].m_position, points[j]));
         }
         matrix.push_back(vec);
     }
@@ -276,7 +269,7 @@ std::vector<Point> PointChecker::addCoveredPoints(std::vector<vec3> points, std:
         {
             if(map[i][j] == 0)
             {
-                pts.push_back({lastPoints[i].ID, points[j]});
+                pts.push_back({lastPoints[i].m_id, points[j]});
             }
         }
     }
@@ -291,7 +284,7 @@ void PointChecker::handleRemovedPoints(std::vector<Point> points)
         bool found = false;
         for(size_t j = 0; j < points.size(); j++)
         {
-            if(lastPoints[i].ID == points[j].ID)
+            if(lastPoints[i].m_id == points[j].m_id)
             {
                 found = true;
                 break;
@@ -299,8 +292,8 @@ void PointChecker::handleRemovedPoints(std::vector<Point> points)
         }
         if(!found)
         {
-            if(lastPoints[i].ID <= lastPoints.size())
-                lastRemovedIDs.push_back(lastPoints[i].ID);
+            if(lastPoints[i].m_id <= lastPoints.size())
+                lastRemovedIDs.push_back(lastPoints[i].m_id);
         }
     }
 }

@@ -26,7 +26,7 @@
 Animation::Animation(glm::vec3 roomdims, std::string name)
 {
     m_roomDimensions = roomdims;
-    this->m_name = name;
+    m_name = name;
 }
 
 void Animation::AddFrame(Frame k)

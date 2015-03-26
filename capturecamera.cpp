@@ -86,20 +86,20 @@ void CaptureCamera::setIntrinsicMatrix(const cv::Mat &IntrinsicMatrix)
 }
 CaptureCamera::CaptureCamera(vec3 pos, vec3 roomDimensions, std::string name, int ID, float angle, bool backgroudSubstractor)
 {
-    ROI = turnedOn = showWindow = useBackgroundSub = false;
-    videoUsbId = ID;
-    this->name = name;
+    ROI = m_turnedOn = m_showWindow = useBackgroundSub = false;
+    m_videoUsbId = ID;
+    this->m_name = name;
 
-    position = pos;
-    angleOfView = angle;
-    anglePerPixel = 0;
+    m_globalPosition = pos;
+    m_fov = angle;
+    m_anglePerPixel = 0;
     thresholdValue = 255;
-    this->roomDimensions = roomDimensions;
+    this->m_roomDimensions = roomDimensions;
     ComputeDirVector();
 
     createExtrinsicMatrix();
 
-    std::cout << "Vector to middle: " << directionVectorToMiddle << std::endl;
+    std::cout << "Vector to middle: " << m_directionVectorToCenter << std::endl;
 
     contourColor = Scalar(0, 0, 255);
 
@@ -108,19 +108,19 @@ CaptureCamera::CaptureCamera(vec3 pos, vec3 roomDimensions, std::string name, in
     backgroundExtractor = new BackgroundSubtractorMOG(50, 10, 0.3, 0.4);
     useBackgroundSub = backgroudSubstractor;
 
-    QtWidgetViewer = new CamWidget;
-    CQtOpenCVViewerGl *t = QtWidgetViewer->getImageViewer();
+    m_QtWidgetViewer = new CamWidget;
+    CQtOpenCVViewerGl *t = m_QtWidgetViewer->getImageViewer();
     connect(this, SIGNAL(imageRead(cv::Mat)), t, SLOT(showImage(cv::Mat)));
-    connect(QtWidgetViewer, SIGNAL(activeCam(bool)), this, SLOT(activeCam(bool)));
-    connect(QtWidgetViewer, SIGNAL(turnedOnCam(bool)), this, SLOT(turnedOnCam(bool)));
-    connect(QtWidgetViewer, SIGNAL(thresholdCam(size_t)), this, SLOT(thresholdCam(size_t)));
+    connect(m_QtWidgetViewer, SIGNAL(activeCam(bool)), this, SLOT(activeCam(bool)));
+    connect(m_QtWidgetViewer, SIGNAL(turnedOnCam(bool)), this, SLOT(turnedOnCam(bool)));
+    connect(m_QtWidgetViewer, SIGNAL(thresholdCam(size_t)), this, SLOT(thresholdCam(size_t)));
 }
 
 CaptureCamera::~CaptureCamera()
 {
     Hide();
     TurnOff();
-    delete QtWidgetViewer;
+    delete m_QtWidgetViewer;
     delete backgroundExtractor;
 }
 
@@ -128,7 +128,7 @@ std::vector<Line> CaptureCamera::RecordNextFrame()
 {
     lines.clear();
 
-    if(!turnedOn)
+    if(!m_turnedOn)
     {
         std::vector<Line> blank;
         return blank;
@@ -141,7 +141,7 @@ std::vector<Line> CaptureCamera::RecordNextFrame()
 
     circle(frame, cv::Point(frame.cols/2, frame.rows/2), 1, CV_RGB(0,255,0), 2);
 
-    if(showWindow)
+    if(m_showWindow)
     {
         emit imageRead(frame);
     }
@@ -151,7 +151,7 @@ std::vector<Line> CaptureCamera::RecordNextFrame()
 
 std::vector<vec2> CaptureCamera::RecordNextFrame2D()
 {
-    if(!turnedOn)
+    if(!m_turnedOn)
     {
         std::vector<vec2> blank;
         return blank;
@@ -164,7 +164,7 @@ std::vector<vec2> CaptureCamera::RecordNextFrame2D()
 
     circle(frame, cv::Point(frame.cols/2, frame.rows/2), 1, CV_RGB(0,255,0), 2);
 
-    if(showWindow)
+    if(m_showWindow)
     {
         emit imageRead(frame);
     }
@@ -260,9 +260,9 @@ void CaptureCamera::CreateLines()
 {
     lines.clear();
 
-    if(anglePerPixel == 0)
+    if(m_anglePerPixel == 0)
     {
-        anglePerPixel = ( (double)  angleOfView ) / glm::sqrt( (frame.cols * frame.cols + frame.rows * frame.rows));
+        m_anglePerPixel = ( (double)  m_fov ) / glm::sqrt( (frame.cols * frame.cols + frame.rows * frame.rows));
     }
 
     for(size_t i = 0; i < centerOfContour.size(); i++)
@@ -293,24 +293,24 @@ void CaptureCamera::CreateLines()
             }
 
         QMatrix4x4  rotMatrix;
-        rotMatrix.rotate((-centerRelativeTemp.y * anglePerPixel), 1,0,0);
+        rotMatrix.rotate((-centerRelativeTemp.y * m_anglePerPixel), 1,0,0);
 
         QMatrix4x4 rotMatrix2;
-        rotMatrix2.rotate((-centerRelativeTemp.x * anglePerPixel), 0, 1, 0);
+        rotMatrix2.rotate((-centerRelativeTemp.x * m_anglePerPixel), 0, 1, 0);
 
-        QVector4D vector(directionVectorToMiddle.x, directionVectorToMiddle.y, directionVectorToMiddle.z, 0);
+        QVector4D vector(m_directionVectorToCenter.x, m_directionVectorToCenter.y, m_directionVectorToCenter.z, 0);
 
         QVector4D result = rotCamInvertedMatrix* rotMatrix2 * rotMatrix * rotCamMatrix * vector;
 
         vec3 final = vec3(result.x(), result.y(), result.z());
 
-        lines.push_back({position,final});
+        lines.push_back({m_globalPosition,final});
     }
 }
 
 void CaptureCamera::ComputeDirVector()
 {
-    directionVectorToMiddle = vec3(roomDimensions.x/2 - position.x , roomDimensions.y/2 - position.y , roomDimensions.z/2 - position.z);
+    m_directionVectorToCenter = vec3(m_roomDimensions.x/2 - m_globalPosition.x , m_roomDimensions.y/2 - m_globalPosition.y , m_roomDimensions.z/2 - m_globalPosition.z);
 }
 
 void CaptureCamera::NormalizeContours()
@@ -325,7 +325,7 @@ void CaptureCamera::createExtrinsicMatrix()
 {
     m_rotationMatrix = cv::Mat::eye(4, 4, CV_32F);
 
-    glm::vec3 normDirVector = glm::normalize(directionVectorToMiddle); //L
+    glm::vec3 normDirVector = glm::normalize(m_directionVectorToCenter); //L
 
     m_rotationMatrix.at<float>(2,0) = -normDirVector.x;
     m_rotationMatrix.at<float>(2,1) = -normDirVector.y;
@@ -348,9 +348,9 @@ void CaptureCamera::createExtrinsicMatrix()
     cv::Mat tMatrix;
     tMatrix = cv::Mat::eye(4,4, CV_32F);
 
-    tMatrix.at<float>(0,3) = -position.x;
-    tMatrix.at<float>(1,3) = -position.y;
-    tMatrix.at<float>(2,3) = -position.z;
+    tMatrix.at<float>(0,3) = -m_globalPosition.x;
+    tMatrix.at<float>(1,3) = -m_globalPosition.y;
+    tMatrix.at<float>(2,3) = -m_globalPosition.z;
 
     //float myAngle = Line::LineAngle(Line(glm::vec3(0,0,0), glm::vec3(1, 0, 0)), Line(glm::vec3(0,0,0), directionVectorToMiddle));
 
@@ -415,13 +415,13 @@ void CaptureCamera::thresholdCam(size_t threshold)
 
 void CaptureCamera::TurnOn()
 {
-    if(turnedOn)
+    if(m_turnedOn)
         return;
 
-    if(camera.open(videoUsbId))
+    if(camera.open(m_videoUsbId))
     {
         //QtWidgetViewer->setCheckTurnedOn(true);
-        turnedOn = true;
+        m_turnedOn = true;
     }
     else
     {
@@ -431,7 +431,7 @@ void CaptureCamera::TurnOn()
         msgBox.setFixedSize(200,100);
 
         //QtWidgetViewer->setCheckTurnedOn(false);
-        turnedOn = false;
+        m_turnedOn = false;
     }
 
         if(resolution.x != 0 && resolution.y !=0)
@@ -444,10 +444,10 @@ void CaptureCamera::TurnOn()
 
 void CaptureCamera::TurnOff()
 {
-    if(turnedOn)
+    if(m_turnedOn)
     {
-        turnedOn = false;
-        QtWidgetViewer->setCheckTurnedOn(false);
+        m_turnedOn = false;
+        m_QtWidgetViewer->setCheckTurnedOn(false);
         camera.release();
     }
 
@@ -455,34 +455,34 @@ void CaptureCamera::TurnOff()
 
 void CaptureCamera::Show()
 {
-    if(!showWindow)
+    if(!m_showWindow)
     {
-        QtWidgetViewer->setCheckActive(true);
-        showWindow = true;
+        m_QtWidgetViewer->setCheckActive(true);
+        m_showWindow = true;
 
     }
 }
 
 void CaptureCamera::Hide()
 {
-    if(showWindow)
+    if(m_showWindow)
     {
-        QtWidgetViewer->setCheckActive(false);
-        showWindow = false;
+        m_QtWidgetViewer->setCheckActive(false);
+        m_showWindow = false;
     }
 }
 
 void CaptureCamera::Save(std::ofstream &outputFile)
 {
-    outputFile << name << " " << position.x << " " << position.y << " "
-               << position.z << " " << videoUsbId << " " << angleOfView << " "
+    outputFile << m_name << " " << m_globalPosition.x << " " << m_globalPosition.y << " "
+               << m_globalPosition.z << " " << m_videoUsbId << " " << m_fov << " "
                << resolution.x << " " << resolution.y << " " << thresholdValue
                << std::endl;
 }
 
 void CaptureCamera::CalibNoMarkers()
 {
-    if(turnedOn)
+    if(m_turnedOn)
     {
         int i = 0, maxIters = 10;
         Scalar meanValue, lastMeanValue;
@@ -506,7 +506,7 @@ void CaptureCamera::CalibNoMarkers()
             waitKey(66);
         }
 
-        std::cout << name << " calibrated in " << i << " iterations" << std::endl;
+        std::cout << m_name << " calibrated in " << i << " iterations" << std::endl;
 
         Mat temp;
 
@@ -538,7 +538,7 @@ int CaptureCamera::CalibWithMarkers(int numOfMarkers)
 {
     thresholdValue = 255;
 
-    if(turnedOn)
+    if(m_turnedOn)
     {
 
         size_t thresholdUp, thresholdLow;
@@ -611,7 +611,7 @@ int CaptureCamera::CalibWithMarkers(int numOfMarkers)
 
         thresholdValue = thresholdLow + (thresholdUp + thresholdLow)/8;
 
-        QtWidgetViewer->setThreshold(thresholdValue);
+        m_QtWidgetViewer->setThreshold(thresholdValue);
     }
 
     return thresholdValue;

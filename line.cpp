@@ -31,10 +31,8 @@ using glm::dot;
 
 Line::Line(vec3 pos, vec3 vec)
 {
-    found = false;
     m_position = pos;
     m_directionVector = vec;
-    m_numberOfIntersections = 0;
 }
 
 void Line::ClosestPointsOnTwoLines(Line l1, Line l2, vec3 &closestPointLine1, vec3 &closestPointLine2)
@@ -125,7 +123,7 @@ vec3 Line::Intersection(Line &l1, Line &l2, float Epsilon)
     }
 }
 
-//operator
+//operators
 
 std::ostream& operator << (std::ostream &stream,const vec3 &position)
 {
@@ -150,5 +148,7 @@ std::ostream& operator <<(std::ostream &stream, const Line &line)
 
 std::ostream &operator <<(std::ostream &stream, const Point &pnt)
 {
-    stream << pnt.ID << " " << pnt.position;
+    stream << pnt.m_id << " " << pnt.m_position;
+
+    return stream;
 }

@@ -23,13 +23,13 @@
 #ifndef CAPTURECAMERA_H
 #define CAPTURECAMERA_H
 
+#include "line.h"
+#include "Gui/camwidget.h"
+
 #include <fstream>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/opencv.hpp>
-
-#include "line.h"
-#include "Gui/camwidget.h"
 
 #include <QHash>
 
@@ -40,39 +40,42 @@ class CaptureCamera: public QObject
     typedef std::vector<cv::Point> Contour;
 
     //BASIC PARAMETERS
-    int videoUsbId;
-    std::string name;
+    int m_videoUsbId = 0;
+    std::string m_name = "Camera";
+    bool m_turnedOn = false;
+    float m_fov;
+    size_t thresholdValue = 255;
+
 
     //width, length
-    glm::vec3 roomDimensions;
-    glm::vec3 position;
-    glm::vec3 directionVectorToMiddle;
+    glm::vec3 m_roomDimensions;
+    glm::vec3 m_globalPosition;
+    glm::vec3 m_directionVectorToCenter;
 
-    cv::Mat m_finalCameraMatrix;
+    //triangulation
+    double m_anglePerPixel;
+    cv::Mat m_rotationMatrix;
+    cv::Mat m_distortionCoeffs;
 
-    bool turnedOn;
-    bool showWindow;
-
-    float angleOfView;
-    double anglePerPixel;
+    //widget
+    bool m_showWindow = true;
+    CamWidget * m_QtWidgetViewer;
 
     //ADVANCED for camera
     cv::VideoCapture camera;
-    bool ROI;
+    bool ROI = false;
     cv::Mat ROIMask;
-    cv::Mat frameBackground ,frame, frameTemp, MOGMask;
+    cv::Mat frameBackground ,frame, frameTemp;
 
     //background substract
     bool useBackgroundSub;
+    cv::Mat MOGMask;
     cv::BackgroundSubtractorMOG* backgroundExtractor;
 
     //ADVANCED for image process
-    size_t thresholdValue;
     cv::Mat dilateKernel;
-
     cv::Scalar contourColor;
     std::vector <Contour> contours;
-
     cv::Moments centerMoment;
     glm::vec2 centerTemp;
     cv::Point2f  centerRelativeTemp;
@@ -81,12 +84,8 @@ class CaptureCamera: public QObject
     glm::vec3 directionTemp;
     std::vector<Line> lines;
 
-    CamWidget * QtWidgetViewer;
-
     //all matrices
-    cv::Mat m_distortionCoeffs;
     cv::Mat m_projectionMatrix;
-    cv::Mat m_rotationMatrix;
     cv::Mat m_CameraMatrix;
     cv::Mat m_IntrinsicMatrix;
 
@@ -97,7 +96,7 @@ public:
     glm::vec2 resolution;
 
     //public functions
-    CaptureCamera(glm::vec3 pos, glm::vec3 roomDimensions, std::string name, int ID, float angle, bool backgroudSubstractor = false);
+    CaptureCamera(glm::vec3 pos, glm::vec3 m_roomDimensions, std::string m_name, int ID, float angle, bool backgroudSubstractor = false);
 
     ~CaptureCamera();
 
@@ -112,24 +111,24 @@ public:
     int CalibWithMarkers(int numOfMarkers);
     void setROI(cv::Mat roi){ROIMask = roi; ROI = true;}
 
-    void setDimensions(glm::vec3 roomDim){roomDimensions = roomDim; ComputeDirVector();}
-    void setWidth(int  width){roomDimensions.x = width; ComputeDirVector();}
-    void setLength(int length){roomDimensions.y = length; ComputeDirVector();}
+    void setDimensions(glm::vec3 roomDim){m_roomDimensions = roomDim; ComputeDirVector();}
+    void setWidth(int  width){m_roomDimensions.x = width; ComputeDirVector();}
+    void setLength(int length){m_roomDimensions.y = length; ComputeDirVector();}
     void setThreshold(size_t Threshold){thresholdValue = Threshold;}
-    void setAngle(float Angle){angleOfView = Angle; anglePerPixel = 0;}
+    void setAngle(float Angle){m_fov = Angle; m_anglePerPixel = 0;}
 
     void setContrast(int value);
     void setBrightness(int value);
     void setSaturation(int value);
     void setSharpness(int value);
 
-    std::string getName() const {return name;}
-    glm::vec3 getPosition() const {return position;}
-    glm::vec3 getDirVector() const {return directionVectorToMiddle;}
-    int getID() const {return videoUsbId;}
-    float getAngle() const {return angleOfView;}
-    bool getTurnedOn() const {return turnedOn;}
-    CamWidget *getWidget() const {return QtWidgetViewer;}
+    std::string getName() const {return m_name;}
+    glm::vec3 getPosition() const {return m_globalPosition;}
+    glm::vec3 getDirVector() const {return m_directionVectorToCenter;}
+    int getID() const {return m_videoUsbId;}
+    float getAngle() const {return m_fov;}
+    bool getTurnedOn() const {return m_turnedOn;}
+    CamWidget *getWidget() const {return m_QtWidgetViewer;}
 
 
     static cv::Mat myColorThreshold(cv::Mat input, cv::Mat dilateKernel, int thresholdValue, int maxValue);
@@ -149,7 +148,7 @@ public:
 public slots:
     void activeCam(bool active);
 
-    void turnedOnCam(bool turnedOn);
+    void turnedOnCam(bool m_turnedOn);
 
     void thresholdCam(size_t threshold);
 
