@@ -114,7 +114,7 @@ Room::Room(std::string file)
         size_t thresholdValue;
         linestream3 >> thresholdValue;
 
-        CaptureCamera* temp = new CaptureCamera(tposition, roomDimensions, tname, tID, tAngle);
+        CaptureCamera* temp = new CaptureCamera({640, 480}, tposition, roomDimensions, tname, tID, tAngle);
 
         temp->resolution = resolution;
         temp->setThreshold(thresholdValue);
@@ -200,7 +200,7 @@ void Room::AddCamera(CaptureCamera *cam)
 
 void Room::AddCamera(vec3 pos, std::string name, int ID, int angle)
 {
-    CaptureCamera* temp = new CaptureCamera(pos, roomDimensions, name, ID, angle);
+    CaptureCamera* temp = new CaptureCamera({640,480}, pos, roomDimensions, name, ID, angle);
 
     AddCamera(temp);
 }
@@ -496,12 +496,12 @@ void Room::ResultReady(std::vector<Line> lines)
     {
         sendMessage(points);
     }
-
+/*
     for(size_t i = 0; i < points.size(); i++)
     {
         std::cout << points[i] << std::endl;
     }
-
+*/
     //std::cout << timer.elapsed() << std::endl;
 
 

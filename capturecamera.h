@@ -53,7 +53,7 @@ class CaptureCamera: public QObject
     glm::vec3 m_directionVectorToCenter;
 
     //triangulation
-    double m_anglePerPixel;
+    double m_anglePerPixel = 0;
     cv::Mat m_rotationMatrix;
     cv::Mat m_distortionCoeffs;
 
@@ -89,14 +89,14 @@ class CaptureCamera: public QObject
     cv::Mat m_CameraMatrix;
     cv::Mat m_IntrinsicMatrix;
 
-    QHash<int, QHash<int, glm::vec3>> m_pixelLines; // reserver , squeeze
+    QVector<QVector<glm::vec3>> m_pixelLines; // reserver , squeeze
 
 public:
     //public parameters
-    glm::vec2 resolution;
+    glm::vec2 resolution = glm::vec2(0,0);
 
     //public functions
-    CaptureCamera(glm::vec3 pos, glm::vec3 m_roomDimensions, std::string m_name, int ID, float angle, bool backgroudSubstractor = false);
+    CaptureCamera(glm::vec2 resolution, glm::vec3 pos, glm::vec3 m_roomDimensions, std::string m_name, int ID, float angle, bool backgroudSubstractor = false);
 
     ~CaptureCamera();
 
@@ -161,6 +161,8 @@ private:
     void ComputeDirVector();
     void NormalizeContours();
     void createExtrinsicMatrix();
+
+    void computeAllDirections();
 
 signals:
     void imageRead(cv::Mat image);

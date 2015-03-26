@@ -65,7 +65,7 @@ void AddCamera::on_buttonBox_accepted()
         delete m_camera;
     }
 
-    m_camera = new CaptureCamera(vec3(ui->X->text().toFloat(),
+    m_camera = new CaptureCamera(vec2(ui->FrameCols->text().toInt(), ui->FrameRows->text().toInt()), vec3(ui->X->text().toFloat(),
                                  ui->Y->text().toFloat(),
                                  ui->Z->text().toFloat()),
                             m_roomDimensions,
@@ -73,7 +73,7 @@ void AddCamera::on_buttonBox_accepted()
                             ui->deviceUSB_ID->text().toInt(),
                             ui->zorny_uhol->text().toFloat(), ui->useBackgroundSub->isChecked());
 
-    m_camera->resolution = vec2(ui->FrameCols->text().toInt(), ui->FrameRows->text().toInt());
+    //m_camera->resolution = vec2(ui->FrameCols->text().toInt(), ui->FrameRows->text().toInt());
 
 
     //cam->setDistortionCoeffs(m_coefficient);

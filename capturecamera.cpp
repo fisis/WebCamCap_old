@@ -24,7 +24,7 @@
 
 //#define GLM_FORCE_RADIANS
 //#include <glm/gtx/rotate_vector.hpp>
-#include <glm/ext.hpp>
+//#include <glm/ext.hpp>
 
 #include <QMessageBox>
 #include <QVBoxLayout>
@@ -84,20 +84,22 @@ void CaptureCamera::setIntrinsicMatrix(const cv::Mat &IntrinsicMatrix)
 {
     m_IntrinsicMatrix = IntrinsicMatrix;
 }
-CaptureCamera::CaptureCamera(vec3 pos, vec3 roomDimensions, std::string name, int ID, float angle, bool backgroudSubstractor)
+CaptureCamera::CaptureCamera(vec2 resolution, vec3 pos, vec3 roomDimensions, std::string name, int ID, float angle, bool backgroudSubstractor)
 {
     ROI = m_turnedOn = m_showWindow = useBackgroundSub = false;
     m_videoUsbId = ID;
-    this->m_name = name;
-
+    m_name = name;
     m_globalPosition = pos;
     m_fov = angle;
-    m_anglePerPixel = 0;
-    thresholdValue = 255;
-    this->m_roomDimensions = roomDimensions;
+    m_roomDimensions = roomDimensions;
+
+    this->resolution = resolution;
+
     ComputeDirVector();
 
     createExtrinsicMatrix();
+
+    computeAllDirections();
 
     std::cout << "Vector to middle: " << m_directionVectorToCenter << std::endl;
 
@@ -260,24 +262,17 @@ void CaptureCamera::CreateLines()
 {
     lines.clear();
 
-    if(m_anglePerPixel == 0)
-    {
-        m_anglePerPixel = ( (double)  m_fov ) / glm::sqrt( (frame.cols * frame.cols + frame.rows * frame.rows));
-    }
-
     for(size_t i = 0; i < centerOfContour.size(); i++)
     {
+        lines.push_back({m_globalPosition,m_pixelLines[centerOfContour[i].x][centerOfContour[i].y]});
+
+/*
+
         //vypocitam stred contury vzhľadom ku stredu obrazovky
         //centerRelativeTemp = vec2(centerOfContour[i].x - frame.cols/2,centerOfContour[i].y - frame.rows/2);
 
         centerRelativeTemp = cv::Point2f(centerOfContour[i].x - frame.cols/2,centerOfContour[i].y - frame.rows/2);
-        /*
-        //rotacie
-        directionTemp = glm::rotateZ((tvec3<double, (glm::precision)0u>) directionVectorToMiddle, (-centerRelativeTemp.x * anglePerPixel));//*0.0174532925);
 
-        directionTemp = glm::rotateX((tvec3<double, (glm::precision)0u>) directionTemp , (-centerRelativeTemp.y * anglePerPixel));//*0.0174532925);
-        lines.push_back(Line(position , directionTemp));
-        */
 
         cv::Mat m_invertedRotationMatrix =  m_rotationMatrix.inv();
 
@@ -305,12 +300,16 @@ void CaptureCamera::CreateLines()
         vec3 final = vec3(result.x(), result.y(), result.z());
 
         lines.push_back({m_globalPosition,final});
+*/
     }
+
 }
 
 void CaptureCamera::ComputeDirVector()
 {
     m_directionVectorToCenter = vec3(m_roomDimensions.x/2 - m_globalPosition.x , m_roomDimensions.y/2 - m_globalPosition.y , m_roomDimensions.z/2 - m_globalPosition.z);
+    
+
 }
 
 void CaptureCamera::NormalizeContours()
@@ -358,6 +357,60 @@ void CaptureCamera::createExtrinsicMatrix()
     m_CameraMatrix = temp(Rect(0,0, 4, 3));
 
     std::cout << m_CameraMatrix << std::endl;
+}
+
+void CaptureCamera::computeAllDirections()
+{
+    if(m_anglePerPixel == 0)
+    {
+        m_anglePerPixel = ( (double)  m_fov ) / glm::sqrt( (resolution.x * resolution.x + resolution.y * resolution.y));
+    }
+
+    std::cout << m_anglePerPixel << std::endl;
+
+    m_pixelLines.clear();
+
+    m_pixelLines.reserve(resolution.x);
+    cv::Mat m_invertedRotationMatrix =  m_rotationMatrix.inv();
+
+    QMatrix4x4 rotCamMatrix;
+    QMatrix4x4 rotCamInvertedMatrix;
+
+    for(size_t i = 0; i < 4; i++)
+        for(size_t j = 0; j < 4; j++)
+        {
+            rotCamMatrix(i,j) = m_rotationMatrix.at<float>(i,j);
+            rotCamInvertedMatrix(i,j) = m_invertedRotationMatrix.at<float>(i,j);
+        }
+
+    QVector4D vector(m_directionVectorToCenter.x, m_directionVectorToCenter.y, m_directionVectorToCenter.z, 0);
+
+    for(size_t i = 0; i < resolution.x; i++)
+    {
+        QVector<glm::vec3> vecTemp;
+        vecTemp.reserve(resolution.y);
+
+        for(size_t j = 0; j < resolution.y ; j++)
+        {
+            vec2 center = vec2(i,j);
+
+            cv::Point2f centerTemp = cv::Point2f(center.x - resolution.x/2,center.y - resolution.y/2);
+
+            QMatrix4x4  rotMatrix;
+            rotMatrix.rotate((-centerTemp.y * m_anglePerPixel), 1,0,0);
+
+            QMatrix4x4 rotMatrix2;
+            rotMatrix2.rotate((-centerTemp.x * m_anglePerPixel), 0, 1, 0);
+
+            QVector4D result = rotCamInvertedMatrix* rotMatrix2 * rotMatrix * rotCamMatrix * vector;
+
+            vec3 final = vec3(result.x(), result.y(), result.z());
+
+            vecTemp.append(final);
+        }
+
+        m_pixelLines.append(vecTemp);
+    }
 }
 
 cv::Mat CaptureCamera::myColorThreshold(cv::Mat input, Mat dilateKernel , int thresholdValue, int maxValue)
