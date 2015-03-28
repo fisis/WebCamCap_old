@@ -44,12 +44,7 @@ AddProject::AddProject(QWidget *parent) :
     calibNoMarkers = calibMarkers = false;
 }
 
-AddProject::~AddProject()
-{
-    delete ui;
-}
-
-void AddProject::on_buttonBox_accepted()
+Room *AddProject::resolveProject()
 {
     newProject = new Room(nullptr, vec3(ui->width->text().toInt(), ui->length->text().toInt(), ui->height->text().toInt() ),
                         ui->epsilon->text().toFloat(), ui->name->text());
@@ -58,6 +53,18 @@ void AddProject::on_buttonBox_accepted()
     {
         newProject->AddCamera(newCameras[i]);
     }
+
+    return newProject;
+}
+
+AddProject::~AddProject()
+{
+    delete ui;
+}
+
+void AddProject::on_buttonBox_accepted()
+{
+
 }
 
 void AddProject::EditProject(Room *Project)
@@ -103,7 +110,7 @@ void AddProject::addCamToTable(CaptureCamera *temp)
     ui->CameraTable->setItem(row, 3, x);
     x = new QTableWidgetItem(QString::number(temp->getAngle()));
     ui->CameraTable->setItem(row, 4, x);
-    x = new QTableWidgetItem(QString::fromStdString(temp->getName()));
+    x = new QTableWidgetItem(temp->getName());
     ui->CameraTable->setItem(row, 5, x);
 
     x = new QTableWidgetItem(Qt::CheckStateRole);
@@ -121,8 +128,21 @@ void AddProject::on_CameraTable_cellChanged(int row, int column)
 
     switch (column)
     {
+    case 1:
+        //break;
+
+    case 2:
+        //break;
+    case 3:
+       /* newCameras[row]->setPosition(vec3(ui->CameraTable->item(row,1)->text().toFloat(),
+                                            ui->CameraTable->item(row, 2)->text().toFloat(),
+                                            ui->CameraTable->item(row,3)->text().toFloat()));
+        break;*/
     case 4:
             newCameras[row]->setAngle(item->text().toFloat());
+        break;
+    case 5:
+            newCameras[row]->setName(item->text());
         break;
     case 6:
         if(item->checkState() == Qt::Checked)
@@ -202,7 +222,7 @@ void AddProject::on_CalibWithMarkers_clicked()
 
     for(size_t i = 0; i < newCameras.size(); i++)
     {
-        ui->TextWithMarkers->append(QString::fromStdString(newCameras[i]->getName() + ": "));
+        ui->TextWithMarkers->append(newCameras[i]->getName() + ": ");
         ui->TextWithMarkers->append(QString::number(newCameras[i]->CalibWithMarkers(numOfMarkers)));
     }
 

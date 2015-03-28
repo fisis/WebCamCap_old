@@ -105,6 +105,8 @@ private slots:
 
     void on_NumberOfPoints_editingFinished();
 
+    void on_actionAbout_triggered();
+
 private:
     void on_Threshold_valueChanged(int value);
 
@@ -117,6 +119,8 @@ private:
     void setProjectStats();
     int NotSavedMessage();
     void handleMainWProject(Room *p);
+
+    void editProject(Room * project);
 
     Ui::MainWindow *ui;
 };

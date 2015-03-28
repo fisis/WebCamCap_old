@@ -72,8 +72,6 @@ Room::~Room()
         }
         delete(workerthreads[i]);
 
-        m_cameras[i]->Hide();
-        m_cameras[i]->TurnOff();
         delete(m_cameras[i]);
     }
 
@@ -296,6 +294,7 @@ Animation *Room::CaptureAnimationStop()
     animations.push_back(actualAnimation);
 
     Animation * ret = actualAnimation;
+    ret->PostProcess();
 
     m_captureAnimation = false;
 
@@ -504,7 +503,7 @@ void Room::Intersections()
 
     if(m_captureAnimation)
     {
-        actualAnimation->AddFrame(Frame(10,labeledPoints, results));
+        actualAnimation->AddFrame(Frame(timer.elapsed(),labeledPoints, results));
     }
 
     for(size_t i = 0; i < workers.size(); i++)
@@ -530,15 +529,17 @@ void Room::record2D()
 
         QCoreApplication::processEvents();
 
-        if(m_captureAnimation)
-        {
-            actualAnimation->AddFrame({10,labeledPoints});
-        }
-
         if(m_usePipe)
         {
             sendMessage(points2D);
         }
+
+        if(m_captureAnimation)
+        {
+            actualAnimation->AddFrame({timer.elapsed(),labeledPoints});
+        }
+
+        timer.restart();
     }
 }
 

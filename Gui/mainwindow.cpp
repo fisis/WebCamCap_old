@@ -20,6 +20,8 @@
  *
  */
 
+
+#include "aboutwidget.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
@@ -92,11 +94,8 @@ void MainWindow::keyPressEvent(QKeyEvent* e)
 
 }
 
-void MainWindow::keyReleaseEvent(QKeyEvent *e)
+void MainWindow::keyReleaseEvent(QKeyEvent* /*e*/)
 {
-
-
-
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -189,16 +188,12 @@ void MainWindow::OpenRecentProjects()
 
             QVariantMap map = doc.toVariant().toMap();
 
-            //project = new Room(filename.toStdString());
-            project = new Room();
-            project->fromVariantMap(ui->OpenGLWIndow , map);
-            handleMainWProject(project);
+            Room * temp = new Room();
+            temp->fromVariantMap(ui->OpenGLWIndow , map);
 
             file.close();
 
-            handleMainWProject(project);
-
-            on_editProject_triggered();
+            editProject(temp);
         }
     }
 }
@@ -244,34 +239,19 @@ void MainWindow::on_openProject_triggered()
 
         QVariantMap map = doc.toVariant().toMap();
 
-        //project = new Room(filename.toStdString());
-        project = new Room();
-        project->fromVariantMap(ui->OpenGLWIndow , map);
-        handleMainWProject(project);
+        Room* temp = new Room();
+        temp->fromVariantMap(ui->OpenGLWIndow , map);
 
         file.close();
 
-        on_editProject_triggered();
+        editProject(temp);
     }
 
 }
 
 void MainWindow::on_editProject_triggered()
 {
-    AddProject NewProjectDialog(this);
-
-    NewProjectDialog.EditProject(project);
-    NewProjectDialog.setModal(true);
-
-    bool ok = NewProjectDialog.exec();
-
-    if(ok)
-    {
-        delete(project);
-
-        project = NewProjectDialog.getProject();
-        handleMainWProject(project);
-    }
+    editProject(project);
 }
 
 void MainWindow::on_saveProject_triggered()
@@ -294,7 +274,7 @@ void MainWindow::on_saveProject_triggered()
 
             QFile file(filename);
 
-            if(!file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+            if(!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
             {
                 QMessageBox::warning(this, "warning", "cannot save file to this location");
                 return;
@@ -342,9 +322,7 @@ void MainWindow::on_nahravanie_clicked(bool checked)
 
 void MainWindow::createRollOutMenu()
 {
-
-
-    for(size_t i = 0; i < recentProjects.size(); i++)
+    for(int i = 0; i < recentProjects.size(); i++)
     {
         QAction* temp = new QAction(recentProjects[i],this);
 
@@ -357,7 +335,7 @@ void MainWindow::createRollOutMenu()
 
 bool MainWindow::searchForRecentProjects(QString filestring)
 {
-    for(size_t i = 0; i < recentProjects.size();i++)
+    for(int i = 0; i < recentProjects.size();i++)
     {
         if(recentProjects[i] == filestring)
         {
@@ -424,6 +402,46 @@ void MainWindow::handleMainWProject(Room *p)
     }
 }
 
+void MainWindow::editProject(Room *project)
+{
+    AddProject NewProjectDialog(this);
+
+    NewProjectDialog.EditProject(project);
+    NewProjectDialog.setModal(true);
+
+    if(this->project !=  nullptr)
+    {
+        for(size_t i = 0; i < this->project->getcameras().size(); i++)
+        {
+            this->project->HideCameraVideo(i);
+            this->project->TurnOffCamera(i);
+        }
+    }
+
+    bool ok = NewProjectDialog.exec();
+
+    if(ok)
+    {
+        if(this->project != nullptr)
+        {
+            auto cams = this->project->getcameras();
+
+            for(size_t i = 0; i < cams.size(); i++)
+            {
+                scrollWidget->layout()->removeWidget(cams[i]->getWidget());
+            }
+            delete this->project;
+        }
+
+
+        Room * temp = NewProjectDialog.resolveProject();
+
+        handleMainWProject(temp);
+
+        this->project = temp;
+    }
+}
+
 void MainWindow::on_playButton_pressed()
 {
     if(!captureAnimation)
@@ -464,7 +482,7 @@ void MainWindow::on_AnimationsTable_cellChanged(int row, int column)
 {
     if(column == 0)
     {
-         //Animations[row]->setName(ui->AnimationsTable->item(row, column)->text().toStdString());
+         m_animations[row]->setName(ui->AnimationsTable->item(row, column)->text().toStdString());
     }
 }
 
@@ -529,4 +547,11 @@ void MainWindow::on_LivePipe_stateChanged(int arg1)
 void MainWindow::on_NumberOfPoints_editingFinished()
 {
     project->setNumberOfPoints(ui->NumberOfPoints->text().toInt());
+}
+
+void MainWindow::on_actionAbout_triggered()
+{
+    AboutWidget about;
+
+    about.exec();
 }

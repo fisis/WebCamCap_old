@@ -81,7 +81,7 @@ CaptureCamera::CaptureCamera()
 
 }
 
-CaptureCamera::CaptureCamera(vec2 resolution, vec3 pos, vec3 roomDimensions, std::string name, int ID, float angle, bool backgroudSubstractor)
+CaptureCamera::CaptureCamera(vec2 resolution, vec3 pos, vec3 roomDimensions, QString name, int ID, float angle, bool backgroudSubstractor)
 {
     m_videoUsbId = ID;
     m_name = name;
@@ -90,11 +90,7 @@ CaptureCamera::CaptureCamera(vec2 resolution, vec3 pos, vec3 roomDimensions, std
     m_roomDimensions = roomDimensions;
     m_resolution = resolution;
 
-    ComputeDirVector();
-
-    createExtrinsicMatrix();
-
-    computeAllDirections();
+    computeNewParameters();
 
     std::cout << "Vector to middle: " << m_directionVectorToCenter << std::endl;
 
@@ -306,8 +302,6 @@ void CaptureCamera::CreateLines()
 void CaptureCamera::ComputeDirVector()
 {
     m_directionVectorToCenter = vec3(m_roomDimensions.x/2 - m_globalPosition.x , m_roomDimensions.y/2 - m_globalPosition.y , m_roomDimensions.z/2 - m_globalPosition.z);
-    
-
 }
 
 void CaptureCamera::NormalizeContours()
@@ -409,6 +403,15 @@ void CaptureCamera::computeAllDirections()
 
         m_pixelLines.append(vecTemp);
     }
+}
+
+void CaptureCamera::computeNewParameters()
+{
+    ComputeDirVector();
+
+    createExtrinsicMatrix();
+
+    computeAllDirections();
 }
 
 cv::Mat CaptureCamera::myColorThreshold(cv::Mat input , int thresholdValue, int maxValue)
@@ -523,14 +526,6 @@ void CaptureCamera::Hide()
     }
 }
 
-void CaptureCamera::Save(std::ofstream &outputFile)
-{
-    outputFile << m_name << " " << m_globalPosition.x << " " << m_globalPosition.y << " "
-               << m_globalPosition.z << " " << m_videoUsbId << " " << m_fov << " "
-               << m_resolution.x << " " << m_resolution.y << " " << m_thresholdValue
-               << std::endl;
-}
-
 void CaptureCamera::CalibNoMarkers()
 {
     if(m_turnedOn)
@@ -557,7 +552,7 @@ void CaptureCamera::CalibNoMarkers()
             waitKey(66);
         }
 
-        std::cout << m_name << " calibrated in " << i << " iterations" << std::endl;
+        std::cout << m_name.toStdString() << " calibrated in " << i << " iterations" << std::endl;
 
         Mat temp;
 
@@ -691,7 +686,7 @@ QVariantMap CaptureCamera::toVariantMap()
     QVariantMap retVal;
 
     retVal[usbIdKey] = m_videoUsbId;
-    retVal[cameraNameKey] = QString::fromStdString(m_name);
+    retVal[cameraNameKey] = m_name;
     retVal[turnedOnKey] = m_turnedOn;
     retVal[globalPositionKeyX] = m_globalPosition.x;
     retVal[globalPositionKeyY] = m_globalPosition.y;
@@ -714,17 +709,13 @@ QVariantMap CaptureCamera::toVariantMap()
 void CaptureCamera::fromVariantMap(QVariantMap varMap)
 {
     m_videoUsbId = varMap[usbIdKey].toInt();
-    m_name = varMap[cameraNameKey].toString().toStdString();
+    m_name = varMap[cameraNameKey].toString();
     m_globalPosition = vec3(varMap[globalPositionKeyX].toFloat(),varMap[globalPositionKeyY].toFloat(),varMap[globalPositionKeyZ].toFloat());
     m_fov = varMap[fovKey].toFloat();
     m_roomDimensions = vec3(varMap[roomDimensionsKeyX].toFloat(), varMap[roomDimensionsKeyY].toFloat(), varMap[roomDimensionsKeyZ].toFloat());
     m_resolution =  vec2(varMap[resolutionKeyX].toFloat(), varMap[resolutionKeyY].toFloat());
 
-    ComputeDirVector();
-
-    createExtrinsicMatrix();
-
-    computeAllDirections();
+    computeNewParameters();
 
     std::cout << "Vector to middle: " << m_directionVectorToCenter << std::endl;
 

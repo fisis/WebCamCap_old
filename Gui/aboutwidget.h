@@ -20,59 +20,28 @@
  *
  */
 
-#ifndef ADDPROJECT_H
-#define ADDPROJECT_H
+#ifndef ABOUTWIDGET_H
+#define ABOUTWIDGET_H
 
-#include <QtWidgets/QDialog>
+#include <QDialog>
 
-#include "../room.h"
-#include "addcamera.h"
 
 namespace Ui {
-class AddProject;
+class AboutWidget;
 }
 
-class AddProject : public QDialog
+class AboutWidget : public QDialog
 {
     Q_OBJECT
 
-    Room *newProject;
-    std::vector<CaptureCamera*> newCameras;
-
-    bool calibNoMarkers, calibMarkers;
-
 public:
-    explicit AddProject(QWidget *parent = 0);
-
-    Room * resolveProject();
-
-    Room* getProject() const {return newProject;}
-    void EditProject(Room * PROJECT);
-
-
-    ~AddProject();
+    explicit AboutWidget(QWidget *parent =0);
+    ~AboutWidget();
 
 private slots:
-    void on_buttonBox_accepted();
-
-    void on_deleteCamera_pressed();
-
-    void on_CameraTable_cellChanged(int row, int column);
-
-    void on_AddCamera_clicked();
-
-    void on_name_textEdited(const QString &arg1);
-
-    void on_CalibNoMarkers_clicked();
-
-    void on_CalibWithMarkers_clicked();
-
-    void on_editCamera_clicked();
 
 private:
-
-    void addCamToTable(CaptureCamera *temp);
-    Ui::AddProject *ui;
+    Ui::AboutWidget *ui;
 };
 
-#endif // ADDPROJECT_H
+#endif // ABOUTWIDGET_H

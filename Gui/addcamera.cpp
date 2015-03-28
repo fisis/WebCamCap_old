@@ -69,7 +69,7 @@ void AddCamera::on_buttonBox_accepted()
                                  ui->Y->text().toFloat(),
                                  ui->Z->text().toFloat()),
                             m_roomDimensions,
-                            ui->Name->text().toStdString(),
+                            ui->Name->text(),
                             ui->deviceUSB_ID->text().toInt(),
                             ui->zorny_uhol->text().toFloat(), ui->useBackgroundSub->isChecked());
 

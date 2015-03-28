@@ -65,6 +65,7 @@ QT5_WRAP_UI(UIS
     ${CMAKE_CURRENT_SOURCE_DIR}/Gui/animplayer.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/Gui/camwidget.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/Gui/mainwindow.ui
+    ${CMAKE_CURRENT_SOURCE_DIR}/Gui/aboutwidget.ui
 )
 
 QT5_WRAP_CPP(CPPS
@@ -74,6 +75,7 @@ QT5_WRAP_CPP(CPPS
     ${CMAKE_CURRENT_SOURCE_DIR}/Gui/animplayer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Gui/camwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Gui/mainwindow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Gui/aboutwidget.h
 )
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Pictures/EditIcon.png ${CMAKE_CURRENT_BINARY_DIR}/Pictures/EditIcon.png COPYONLY)

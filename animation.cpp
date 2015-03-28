@@ -37,10 +37,12 @@ void Animation::AddFrame(Frame k)
 void Animation::Save(std::string file)
 {
     std::ofstream outputFile;
-    outputFile.open(file, std::ios_base::out);
+    outputFile.open(file, std::ios_base::out | std::ios_base::trunc);
 
     outputFile << m_roomDimensions << m_frameRate << std::endl;
     outputFile << m_frames.size() << std::endl;
+
+    outputFile << "# elapsed ms/ number of points / point id , position (2D/3D)" << std::endl;
 
     for(size_t i = 0; i < m_frames.size(); i++)
     {

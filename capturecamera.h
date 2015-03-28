@@ -39,7 +39,7 @@ class CaptureCamera: public QObject
 
     //BASIC PARAMETERS
     int m_videoUsbId = 0;
-    std::string m_name = "Camera";
+    QString m_name = "Camera";
     bool m_turnedOn = false;
     float m_fov;
     size_t m_thresholdValue = 255;
@@ -95,7 +95,7 @@ public:
 
     //public functions
     CaptureCamera();
-    CaptureCamera(glm::vec2 m_resolution, glm::vec3 pos, glm::vec3 m_roomDimensions, std::string m_name, int ID, float angle, bool backgroudSubstractor = false);
+    CaptureCamera(glm::vec2 m_resolution, glm::vec3 pos, glm::vec3 m_roomDimensions, QString m_name, int ID, float angle, bool backgroudSubstractor = false);
 
     ~CaptureCamera();
 
@@ -110,11 +110,14 @@ public:
     int CalibWithMarkers(int numOfMarkers);
     void setROI(cv::Mat roi){ROIMask = roi; ROI = true;}
 
-    void setDimensions(glm::vec3 roomDim){m_roomDimensions = roomDim; ComputeDirVector();}
+    void setPosition(glm::vec3 position){m_globalPosition = position; computeNewParameters();}
+    void setDimensions(glm::vec3 roomDim){m_roomDimensions = roomDim; computeNewParameters();}
     void setThreshold(size_t Threshold){m_thresholdValue = Threshold;}
     void setAngle(float Angle){m_fov = Angle; m_anglePerPixel = 0;}
+    void setName(QString name){m_name = name;}
 
-    std::string getName() const {return m_name;}
+
+    QString getName() const {return m_name;}
     glm::vec3 getPosition() const {return m_globalPosition;}
     glm::vec3 getDirVector() const {return m_directionVectorToCenter;}
     int getID() const {return m_videoUsbId;}
@@ -157,6 +160,8 @@ private:
     void createExtrinsicMatrix();
 
     void computeAllDirections();
+
+    void computeNewParameters();
 
 signals:
     void imageRead(cv::Mat image);

@@ -20,28 +20,19 @@
  *
  */
 
-#include "frame.h"
+#include "aboutwidget.h"
+#include "ui_aboutwidget.h"
 
-
-Frame::Frame(int elapsed, std::vector<Point> pts, QVector<QVector<Line> > lines)
+AboutWidget::AboutWidget(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::AboutWidget)
 {
-    m_points = pts;
-    m_lines = lines;
-    m_elapsedTime = elapsed;
+    ui->setupUi(this);
+    this->setWindowTitle("About");
 }
 
-std::ostream &operator <<(std::ostream &stream, Frame frame)
+AboutWidget::~AboutWidget()
 {
-    stream << frame.getElapsedTime() << " ";
-
-    auto points = frame.getPoints();
-
-    stream << points.size() << " ";
-
-    for(size_t i = 0; i < frame.getPoints().size(); i++)
-    {
-        stream << points[i] << " ";
-    }
-
-    return stream;
+    delete ui;
 }
+
