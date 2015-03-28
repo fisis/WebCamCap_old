@@ -25,17 +25,19 @@
 
 #include "line.h"
 
+#include <QVector>
+
 class Frame
 {
     int m_elapsedTime;
     std::vector<Point> m_points;
-    std::vector<std::vector<Line> > m_lines;
+    QVector<QVector<Line> > m_lines;
 
 public:
-    Frame(int elapsed, std::vector<Point> pts, std::vector<std::vector<Line>> lines = std::vector<std::vector<Line>>());
+    Frame(int elapsed, std::vector<Point> pts, QVector<QVector<Line>> lines = QVector<QVector<Line>>());
 
     std::vector<Point> getPoints() const {return m_points;}
-    std::vector<std::vector<Line> > getLines() const {return m_lines;}
+    QVector<QVector<Line> > getLines() const {return m_lines;}
     int getElapsedTime() const {return m_elapsedTime;}
 };
 

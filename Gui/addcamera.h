@@ -48,7 +48,7 @@ class AddCamera : public QDialog
     QProcess *m_calibApplication = nullptr;
 
     cv::Mat m_cameraMatrix;
-    cv::Mat m_coefficient;
+    cv::Mat m_coefficients;
 
 public:
     explicit AddCamera(QWidget *parent = 0, glm::vec3 m_roomDimensions = glm::vec3(0.0f,0.0f, 0.0f));

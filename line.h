@@ -45,6 +45,7 @@ public:
 
     size_t m_numberOfIntersections = 0;
 
+    Line();
     Line(glm::vec3 pos, glm::vec3 vec);
 
     static void ClosestPointsOnTwoLines(Line l1, Line l2, glm::vec3 &closestPointLine1, glm::vec3 &closestPointLine2);

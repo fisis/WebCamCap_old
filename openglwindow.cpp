@@ -137,7 +137,7 @@ void OpenGLWindow::setRoomDims(vec3 dims)
     updateGL();
 }
 
-void OpenGLWindow::setFrame(std::vector<Point> pts, std::vector<std::vector<Line> > lns)
+void OpenGLWindow::setFrame(std::vector<Point> pts, QVector<QVector<Line> > lns)
 {
     joints = pts;
     lines = lns;
@@ -243,7 +243,7 @@ void OpenGLWindow::countView()
 
 }
 
-void OpenGLWindow::drawLine(Line l)
+void OpenGLWindow::drawLine(const Line &l)
 {
     glBegin(GL_LINES);
     glVertex3f(l.m_position.x, l.m_position.z, -l.m_position.y);
@@ -259,7 +259,7 @@ void OpenGLWindow::drawLines()
     {
         for(size_t j = 0; j < lines[i].size(); j++)
         {
-            drawLine(lines[i][j]);
+            drawLine(lines.at(i).at(j));
         }
     }
 }

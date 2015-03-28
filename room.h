@@ -23,62 +23,59 @@
 #ifndef Room_H
 #define Room_H
 
-#include <QTime>
-#include <QtNetwork/QLocalServer>
-#include <QtNetwork/QLocalSocket>
-
 #include "animation.h"
 #include "pointchecker.h"
 #include "capturethread.h"
 
-typedef struct Edge
+#include <QTime>
+#include <QtNetwork/QLocalServer>
+#include <QtNetwork/QLocalSocket>
+
+
+class Edge
 {
-    Edge(int a, int b, float Eps): index_a(a), index_b(b), epsilon(Eps) {}
+public:
+    Edge(int a, int b, float Eps): m_index1(a), m_index2(b), m_maxError(Eps) {}
 
-    int index_a, index_b;
-    std::vector<Line> a ,b;
-    float epsilon;
-    std::vector <glm::vec3> points;
-    //cv::Mat points3D1, points3D2;
-
-    //cv::Mat m_fundamentalMatrix;
-
-    //void setFundamentalMatrix(glm::vec3 camPos1, glm::vec3 camRot1, cv::Mat intrinsicMatrix1, glm::vec3 camPos2, glm::vec3 camRot2, cv::Mat intrinsicMatrix2);
-
-} Edge;
+    size_t m_index1, m_index2;
+    QVector<Line> a ,b;
+    float m_maxError;
+    QVector <glm::vec3> points;
+};
 
 class Room : public QObject
 {
     Q_OBJECT
 
     //basic parameters for project
-    std::string name;
-    glm::vec3 roomDimensions; //centimeters
-    double epsilon;
-    bool saved;
-    OpenGLWindow *opengl;
+    QString m_name;
+    glm::vec3 m_roomDimensions; //centimeters
+    double m_maxError;
+    bool m_saved;
+    OpenGLWindow *m_openGLWindow = nullptr;
 
-    std::vector <Edge> camTopology;
-    std::vector <CaptureCamera*> cameras;
+    std::vector <Edge> m_cameraTopology;
+    std::vector <CaptureCamera*> m_cameras;
 
-    size_t activeCams;
-    size_t activeCamIndex;
+    size_t m_activeCamerasCount;
+    size_t m_lastActiveCamIndex;
 
-    bool record, captureAnimation;
-    Animation* actualAnimation;
+    bool m_record = false;
+    bool m_captureAnimation = false;
+    Animation* actualAnimation = nullptr;
     std::vector<Animation*> animations;
 
     //pipe
-    bool Pipe;
-    QLocalServer *server;
-    QLocalSocket *socket;
+    bool m_usePipe = false;
+    QLocalServer *server = nullptr;
+    QLocalSocket *socket = nullptr;
 
     //parallel
     QWaitCondition allLines;
 
     //cams
     std::vector <bool> haveResults;
-    std::vector <std::vector<Line> > results;
+    QVector<QVector<Line>> results;
 
     std::vector <worker*> workers;
     std::vector <QThread*> workerthreads;
@@ -92,24 +89,25 @@ class Room : public QObject
     PointChecker checker;
     std::vector<Point> labeledPoints;
 
-
 public:
-    Room(OpenGLWindow *opengl = nullptr, glm::vec3 dimensions = glm::vec3(0.0f,0.0f, 0.0f), float eps = 0.5, std::string name = "Default Project");
-    Room(std::string file);
+    Room(OpenGLWindow *m_openGLWindow = nullptr, glm::vec3 dimensions = glm::vec3(0.0f,0.0f, 0.0f), float eps = 0.5, QString m_name = "Default Project");
+    //Room(std::string file);
     ~Room();
 
-    void AddCamera(glm::vec3 pos, std::string name, int ID,int angle);
+    void fromVariantMap(OpenGLWindow *opengl ,QVariantMap &varMap);
+    QVariantMap toVariantMap();
+
     void AddCamera(CaptureCamera *cam);
     void RemoveCamera(size_t index);
-    void Save(std::ofstream &file);
+    //void Save(std::ofstream &file);
 
     void MakeTopology();
     void resolveTopologyDuplicates();
 
     void TurnOnCamera(size_t index);
     void TurnOffCamera(size_t index);
-    void ShowCameraVideo(size_t index){cameras[index]->Show();}
-    void HideCameraVideo(size_t index){cameras[index]->Hide();}
+    void ShowCameraVideo(size_t index){m_cameras[index]->Show();}
+    void HideCameraVideo(size_t index){m_cameras[index]->Hide();}
 
     void CaptureAnimationStart();
     void setPipe(bool pipe);
@@ -118,22 +116,20 @@ public:
     void RecordingStop();
 
     void setDimensions(glm::vec3 dims);
-    void setName(std::string name){this->name = name;}
+    void setName(QString name){this->m_name = name;}
     void setEpsilon(float size);
     void setNumberOfPoints(size_t nOfPts);
 
-    std::string getName() const {return name;}
-    glm::vec3 getDimensions() const {return roomDimensions;}
-    int getWidth()const {return roomDimensions.x;}
-    int getLength()const {return roomDimensions.y;}
-    float getEpsilon() const {return epsilon;}
-    bool getSaved() const {return saved;}
-    std::vector<std::vector<Line> > getLines() const {return results;}
-    std::vector <CaptureCamera*> getcameras()const {return cameras;}
+    QString getName() const {return m_name;}
+    glm::vec3 getDimensions() const {return m_roomDimensions;}
+    int getWidth()const {return m_roomDimensions.x;}
+    int getLength()const {return m_roomDimensions.y;}
+    float getEpsilon() const {return m_maxError;}
+    bool getSaved() const {return m_saved;}
+    QVector<QVector<Line>> getLines() const {return results;}
+    std::vector <CaptureCamera*> getcameras()const {return m_cameras;}
 
-    void setOpenglWindow(OpenGLWindow * opengl) {this->opengl = opengl;}
-    void setThreshold(int value);
-    void setBrighnessOfCamera(int value);
+    void setOpenglWindow(OpenGLWindow * opengl) {this->m_openGLWindow = opengl;}
 
     static void Intersection(Edge &camsEdge);
 
@@ -143,7 +139,7 @@ signals:
     void startWork2D();
 
 private slots:
-    void ResultReady(std::vector<Line> lines);
+    void ResultReady(QVector<Line> lines);
     void record2D();
     void handleConnection();
 

@@ -50,7 +50,6 @@ class MainWindow : public QMainWindow
     std::vector<std::vector<Line> > lines;
     std::vector<glm::vec3> points;
 
-    std::string logDestinationFolder;
     QList<QString> recentProjects;
     QList <QAction*> recentProjectsQActions;
 

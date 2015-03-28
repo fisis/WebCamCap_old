@@ -29,6 +29,11 @@ using glm::vec2;
 using glm::vec3;
 using glm::dot;
 
+Line::Line()
+{
+
+}
+
 Line::Line(vec3 pos, vec3 vec)
 {
     m_position = pos;

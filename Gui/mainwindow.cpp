@@ -29,6 +29,8 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QVBoxLayout>
+#include <QFile>
+#include <QJsonDocument>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -53,8 +55,6 @@ MainWindow::MainWindow(QWidget *parent) :
     saveIcon = save;
 
     project = nullptr;
-
-    logDestinationFolder = "LogFile/log.txt";
 
     loadLog();
 
@@ -182,8 +182,23 @@ void MainWindow::OpenRecentProjects()
                 }
             }
 
-            project = new Room(recentProjects[i].toStdString());
+            QFile file(recentProjects[i]);
+            file.open(QFile::OpenModeFlag::ReadOnly);
+
+            QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+
+            QVariantMap map = doc.toVariant().toMap();
+
+            //project = new Room(filename.toStdString());
+            project = new Room();
+            project->fromVariantMap(ui->OpenGLWIndow , map);
             handleMainWProject(project);
+
+            file.close();
+
+            handleMainWProject(project);
+
+            on_editProject_triggered();
         }
     }
 }
@@ -211,7 +226,7 @@ void MainWindow::on_openProject_triggered()
         }
     }
 
-    QString filename = QFileDialog::getOpenFileName(this,tr("Load Project"), ".", tr(".txt Files (*.txt)"));
+    QString filename = QFileDialog::getOpenFileName(this,tr("Load Project"), ".", tr(".json Files (*.json)"));
 
     if(filename != "")
     {
@@ -222,8 +237,21 @@ void MainWindow::on_openProject_triggered()
             recentProjects.push_back(filename);
         }
 
-        project = new Room(filename.toStdString());
+        QFile file(filename);
+        file.open(QFile::OpenModeFlag::ReadOnly);
+
+        QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+
+        QVariantMap map = doc.toVariant().toMap();
+
+        //project = new Room(filename.toStdString());
+        project = new Room();
+        project->fromVariantMap(ui->OpenGLWIndow , map);
         handleMainWProject(project);
+
+        file.close();
+
+        on_editProject_triggered();
     }
 
 }
@@ -236,21 +264,21 @@ void MainWindow::on_editProject_triggered()
     NewProjectDialog.setModal(true);
 
     bool ok = NewProjectDialog.exec();
-/*
+
     if(ok)
     {
         delete(project);
 
         project = NewProjectDialog.getProject();
         handleMainWProject(project);
-    }*/
+    }
 }
 
 void MainWindow::on_saveProject_triggered()
 {
     if(project != nullptr)
     {
-        QString filename = QFileDialog::getSaveFileName(this,tr("Save Project"),QString::fromStdString( project->getName()+".txt" ), tr(".txt Files (*.txt)"));
+        QString filename = QFileDialog::getSaveFileName(this,tr("Save Project"),project->getName()+".json" , tr(".json Files (*.json)"));
 
         if(filename != "")
         {
@@ -258,20 +286,27 @@ void MainWindow::on_saveProject_triggered()
             {
                 recentProjects.push_back(filename);
 
-                if(!project->getSaved())
+                /*if(!project->getSaved())
                 {
                     return;
-                }
+                }*/
             }
 
-            std::ofstream outputFile;
-            outputFile.open(filename.toStdString(), std::ios_base::out);
+            QFile file(filename);
 
-            //save name of project
-            outputFile << project->getName() << std::endl;
+            if(!file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+            {
+                QMessageBox::warning(this, "warning", "cannot save file to this location");
+                return;
+            }
 
-            project->Save(outputFile);
-            outputFile.close();
+            QVariantMap map = project->toVariantMap();
+
+            QJsonDocument doc = QJsonDocument::fromVariant(map);
+
+            file.write(doc.toJson());
+
+            file.close();
             std::cout << "Project saved to:" << filename.toStdString() << std::endl;
         }
     }

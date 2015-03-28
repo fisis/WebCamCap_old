@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGBA | GLUT_ALPHA);
-    qRegisterMetaType<std::vector<Line> >("std::vector<Line>");
+    qRegisterMetaType<QVector<Line> >("QVector<Line>");
     qRegisterMetaType<std::vector<glm::vec3> >("std::vector<glm::vec3>");
     qRegisterMetaType<std::vector<glm::vec2> >("std::vector<glm::vec2>");
     qRegisterMetaType<cv::Mat >("cv::Mat");

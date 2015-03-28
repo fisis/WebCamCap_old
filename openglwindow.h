@@ -45,7 +45,7 @@ class OpenGLWindow : public QGLWidget
     unsigned int texId;
 
     //Structure
-    std::vector<std::vector<Line> > lines;
+    QVector<QVector<Line> > lines;
     std::vector<Point> joints;
 
     //mouse tracking
@@ -62,7 +62,7 @@ public:
     void setRoomDims(glm::vec3 dims);
     void setDrawJoints(bool draw){mdrawJoints = draw;}
     void setDrawLines(bool draw){mdrawLines = draw;}
-    void setFrame(std::vector<Point> pts, std::vector<std::vector<Line> > lns = std::vector<std::vector<Line> >());
+    void setFrame(std::vector<Point> pts, QVector<QVector<Line>> lns = QVector<QVector<Line> >());
     bool getTwoDimensions() const;
     void setTwoDimensions(bool value);
 
@@ -80,7 +80,7 @@ private:
     void limitsCamRot();
     void countView();
 
-    void drawLine(Line l);
+    void drawLine(const Line &l);
 
     void drawLines();
     void drawJoints();

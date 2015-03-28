@@ -22,10 +22,8 @@
 
 #include "capturecamera.h"
 
-//#define GLM_FORCE_RADIANS
-//#include <glm/gtx/rotate_vector.hpp>
-//#include <glm/ext.hpp>
-
+#include <QVariant>
+#include <QVariantMap>
 #include <QMessageBox>
 #include <QVBoxLayout>
 #include <QMatrix4x4>
@@ -33,15 +31,6 @@
 using namespace cv;
 using glm::vec2;
 using glm::vec3;
-
-/*
-#ifdef _MSC_VER
-    using glm::tvec3;
-#else
-    using glm::detail::tvec3;
-#endif
-*/
-
 
 cv::Mat CaptureCamera::distortionCoeffs() const
 {
@@ -84,16 +73,22 @@ void CaptureCamera::setIntrinsicMatrix(const cv::Mat &IntrinsicMatrix)
 {
     m_IntrinsicMatrix = IntrinsicMatrix;
 }
+
+
+
+CaptureCamera::CaptureCamera()
+{
+
+}
+
 CaptureCamera::CaptureCamera(vec2 resolution, vec3 pos, vec3 roomDimensions, std::string name, int ID, float angle, bool backgroudSubstractor)
 {
-    ROI = m_turnedOn = m_showWindow = useBackgroundSub = false;
     m_videoUsbId = ID;
     m_name = name;
     m_globalPosition = pos;
     m_fov = angle;
     m_roomDimensions = roomDimensions;
-
-    this->resolution = resolution;
+    m_resolution = resolution;
 
     ComputeDirVector();
 
@@ -104,8 +99,6 @@ CaptureCamera::CaptureCamera(vec2 resolution, vec3 pos, vec3 roomDimensions, std
     std::cout << "Vector to middle: " << m_directionVectorToCenter << std::endl;
 
     contourColor = Scalar(0, 0, 255);
-
-    dilateKernel = getStructuringElement(MORPH_ELLIPSE, Size(3,3));
 
     backgroundExtractor = new BackgroundSubtractorMOG(50, 10, 0.3, 0.4);
     useBackgroundSub = backgroudSubstractor;
@@ -126,18 +119,21 @@ CaptureCamera::~CaptureCamera()
     delete backgroundExtractor;
 }
 
-std::vector<Line> CaptureCamera::RecordNextFrame()
+QVector<Line> CaptureCamera::RecordNextFrame()
 {
     lines.clear();
 
     if(!m_turnedOn)
     {
-        std::vector<Line> blank;
+        QVector<Line> blank;
         return blank;
     }
 
     camera >> frame;
+
     UseFilter();
+
+
     MiddleOfContours();
     CreateLines();
 
@@ -151,6 +147,8 @@ std::vector<Line> CaptureCamera::RecordNextFrame()
     return lines;
 }
 
+#include <QTime>
+
 std::vector<vec2> CaptureCamera::RecordNextFrame2D()
 {
     if(!m_turnedOn)
@@ -159,7 +157,12 @@ std::vector<vec2> CaptureCamera::RecordNextFrame2D()
         return blank;
     }
 
+    QTime timer;
+    timer.start();
+
     camera >> frame;
+
+    std::cout << timer.elapsed() << std::endl;
 
     UseFilter();
     MiddleOfContours();
@@ -178,13 +181,10 @@ std::vector<vec2> CaptureCamera::RecordNextFrame2D()
 
 void CaptureCamera::UseFilter()
 {
-
-/*
     if(!m_distortionCoeffs.empty() && !m_IntrinsicMatrix.empty())
     {
         GetUndisortedPosition();
     }
-*/
 
     if(ROI)
     {
@@ -202,7 +202,7 @@ void CaptureCamera::UseFilter()
         frame.copyTo(frameTemp);
         absdiff(frameTemp,frameBackground, frameTemp);
 
-        frameTemp = myColorThreshold(frameTemp,dilateKernel, 20, 255);
+        frameTemp = myColorThreshold(frameTemp, 20, 255);
 
         frame.copyTo(frameTemp, frameTemp);
     }
@@ -210,7 +210,7 @@ void CaptureCamera::UseFilter()
     cvtColor(frameTemp, frameTemp, COLOR_BGR2GRAY);
     medianBlur(frameTemp, frameTemp, 3);
 
-    threshold(frameTemp,frameTemp, thresholdValue, 255, THRESH_BINARY);
+    threshold(frameTemp,frameTemp, m_thresholdValue, 255, THRESH_BINARY);
 
     morphologyEx(frameTemp, frameTemp, MORPH_OPEN , dilateKernel);
 
@@ -231,8 +231,6 @@ void CaptureCamera::UseFilter()
 
 void CaptureCamera::GetUndisortedPosition()
 {
-    //std::cout << "old_position " << position.x << " " << position.y << std::endl;
-
     Mat framein;
 
     frame.copyTo(framein);
@@ -363,14 +361,14 @@ void CaptureCamera::computeAllDirections()
 {
     if(m_anglePerPixel == 0)
     {
-        m_anglePerPixel = ( (double)  m_fov ) / glm::sqrt( (resolution.x * resolution.x + resolution.y * resolution.y));
+        m_anglePerPixel = ( (double)  m_fov ) / glm::sqrt( (m_resolution.x * m_resolution.x + m_resolution.y * m_resolution.y));
     }
 
     std::cout << m_anglePerPixel << std::endl;
 
     m_pixelLines.clear();
 
-    m_pixelLines.reserve(resolution.x);
+    m_pixelLines.reserve(m_resolution.x);
     cv::Mat m_invertedRotationMatrix =  m_rotationMatrix.inv();
 
     QMatrix4x4 rotCamMatrix;
@@ -385,16 +383,16 @@ void CaptureCamera::computeAllDirections()
 
     QVector4D vector(m_directionVectorToCenter.x, m_directionVectorToCenter.y, m_directionVectorToCenter.z, 0);
 
-    for(size_t i = 0; i < resolution.x; i++)
+    for(size_t i = 0; i < m_resolution.x; i++)
     {
         QVector<glm::vec3> vecTemp;
-        vecTemp.reserve(resolution.y);
+        vecTemp.reserve(m_resolution.y);
 
-        for(size_t j = 0; j < resolution.y ; j++)
+        for(size_t j = 0; j < m_resolution.y ; j++)
         {
             vec2 center = vec2(i,j);
 
-            cv::Point2f centerTemp = cv::Point2f(center.x - resolution.x/2,center.y - resolution.y/2);
+            cv::Point2f centerTemp = cv::Point2f(center.x - m_resolution.x/2,center.y - m_resolution.y/2);
 
             QMatrix4x4  rotMatrix;
             rotMatrix.rotate((-centerTemp.y * m_anglePerPixel), 1,0,0);
@@ -413,7 +411,7 @@ void CaptureCamera::computeAllDirections()
     }
 }
 
-cv::Mat CaptureCamera::myColorThreshold(cv::Mat input, Mat dilateKernel , int thresholdValue, int maxValue)
+cv::Mat CaptureCamera::myColorThreshold(cv::Mat input , int thresholdValue, int maxValue)
 {
 /*
     std::vector<Mat> ChannelsFrameTemp;
@@ -487,10 +485,10 @@ void CaptureCamera::TurnOn()
         m_turnedOn = false;
     }
 
-        if(resolution.x != 0 && resolution.y !=0)
+        if(m_resolution.x != 0 && m_resolution.y !=0)
         {
-            camera.set(CV_CAP_PROP_FRAME_WIDTH, resolution.x);
-            camera.set(CV_CAP_PROP_FRAME_HEIGHT, resolution.y);
+            camera.set(CV_CAP_PROP_FRAME_WIDTH, m_resolution.x);
+            camera.set(CV_CAP_PROP_FRAME_HEIGHT, m_resolution.y);
         }
 
 }
@@ -529,7 +527,7 @@ void CaptureCamera::Save(std::ofstream &outputFile)
 {
     outputFile << m_name << " " << m_globalPosition.x << " " << m_globalPosition.y << " "
                << m_globalPosition.z << " " << m_videoUsbId << " " << m_fov << " "
-               << resolution.x << " " << resolution.y << " " << thresholdValue
+               << m_resolution.x << " " << m_resolution.y << " " << m_thresholdValue
                << std::endl;
 }
 
@@ -589,7 +587,7 @@ void CaptureCamera::CalibNoMarkers()
 
 int CaptureCamera::CalibWithMarkers(int numOfMarkers)
 {
-    thresholdValue = 255;
+    m_thresholdValue = 255;
 
     if(m_turnedOn)
     {
@@ -605,7 +603,7 @@ int CaptureCamera::CalibWithMarkers(int numOfMarkers)
         size_t nLines;
 
         //step 1, find first value which gives some Lines
-        while(thresholdValue > 20)
+        while(m_thresholdValue > 20)
         {
             UseFilter();
             MiddleOfContours();
@@ -613,7 +611,7 @@ int CaptureCamera::CalibWithMarkers(int numOfMarkers)
 
             if(lines.size() == 0)
             {
-                --thresholdValue;
+                --m_thresholdValue;
                 continue;
             }
             else
@@ -633,7 +631,7 @@ int CaptureCamera::CalibWithMarkers(int numOfMarkers)
         }
 
         //some difference in light intensity (rotation of LED)
-        thresholdValue -= 10;
+        m_thresholdValue -= 10;
 
         UseFilter();
         MiddleOfContours();
@@ -641,14 +639,14 @@ int CaptureCamera::CalibWithMarkers(int numOfMarkers)
 
         nLines = lines.size();
 
-        thresholdUp = thresholdValue;
+        thresholdUp = m_thresholdValue;
         thresholdLow = 0;
         std::cout << "calibrated upper value" << thresholdUp << std::endl;
 
         //step 2 , find threshold where num of lines is starting to grow
-        while(thresholdValue > 0)
+        while(m_thresholdValue > 0)
         {
-            --thresholdValue;
+            --m_thresholdValue;
 
             UseFilter();
             MiddleOfContours();
@@ -656,36 +654,94 @@ int CaptureCamera::CalibWithMarkers(int numOfMarkers)
 
             if(nLines < lines.size())
             {
-                thresholdLow = thresholdValue;
+                thresholdLow = m_thresholdValue;
                 std::cout << "distance: " << "calibrated lower value" << thresholdLow << std::endl;
                 break;
             }
         }
 
-        thresholdValue = thresholdLow + (thresholdUp + thresholdLow)/8;
+        m_thresholdValue = thresholdLow + (thresholdUp + thresholdLow)/8;
 
-        m_QtWidgetViewer->setThreshold(thresholdValue);
+        m_QtWidgetViewer->setThreshold(m_thresholdValue);
     }
 
-    return thresholdValue;
+    return m_thresholdValue;
 }
 
-void CaptureCamera::setContrast(int value)
+const QString usbIdKey("USB");
+const QString cameraNameKey("name");
+const QString turnedOnKey("turneOn");
+const QString globalPositionKeyX("globalpositionX");
+const QString globalPositionKeyY("globalpositionY");
+const QString globalPositionKeyZ("globalpositionZ");
+const QString roomDimensionsKeyX("roomDimX");
+const QString roomDimensionsKeyY("roomDimY");
+const QString roomDimensionsKeyZ("roomDimZ");
+const QString fovKey("fov");
+const QString thresholdKey("threshold");
+const QString showWindowKey("showWindow");
+const QString roineededKey("roineeded");
+// roi to variant
+const QString useBackgroundSubstractorKey("backgroundSubstractor");
+const QString resolutionKeyX("resolutionX");
+const QString resolutionKeyY("resolutionY");
+
+QVariantMap CaptureCamera::toVariantMap()
 {
-    camera.set(CV_CAP_PROP_CONTRAST, value/100.0f);
+    QVariantMap retVal;
+
+    retVal[usbIdKey] = m_videoUsbId;
+    retVal[cameraNameKey] = QString::fromStdString(m_name);
+    retVal[turnedOnKey] = m_turnedOn;
+    retVal[globalPositionKeyX] = m_globalPosition.x;
+    retVal[globalPositionKeyY] = m_globalPosition.y;
+    retVal[globalPositionKeyZ] = m_globalPosition.z;
+    retVal[roomDimensionsKeyX] = m_roomDimensions.x;
+    retVal[roomDimensionsKeyY] = m_roomDimensions.y;
+    retVal[roomDimensionsKeyZ] = m_roomDimensions.z;
+    retVal[fovKey] = m_fov;
+    retVal[thresholdKey] = (int) m_thresholdValue;
+    retVal[showWindowKey] = m_showWindow;
+    retVal[roineededKey] = ROI;
+    ////!!! need ROI man
+    retVal[useBackgroundSubstractorKey] = useBackgroundSub;
+    retVal[resolutionKeyX] = m_resolution.x;
+    retVal[resolutionKeyY] = m_resolution.y;
+
+    return retVal;
 }
 
-void CaptureCamera::setBrightness(int value)
+void CaptureCamera::fromVariantMap(QVariantMap varMap)
 {
-    camera.set(CV_CAP_PROP_BRIGHTNESS, value/100.0f);
-}
+    m_videoUsbId = varMap[usbIdKey].toInt();
+    m_name = varMap[cameraNameKey].toString().toStdString();
+    m_globalPosition = vec3(varMap[globalPositionKeyX].toFloat(),varMap[globalPositionKeyY].toFloat(),varMap[globalPositionKeyZ].toFloat());
+    m_fov = varMap[fovKey].toFloat();
+    m_roomDimensions = vec3(varMap[roomDimensionsKeyX].toFloat(), varMap[roomDimensionsKeyY].toFloat(), varMap[roomDimensionsKeyZ].toFloat());
+    m_resolution =  vec2(varMap[resolutionKeyX].toFloat(), varMap[resolutionKeyY].toFloat());
 
-void CaptureCamera::setSaturation(int value)
-{
-    camera.set(CV_CAP_PROP_SATURATION, value/100.0f);
-}
+    ComputeDirVector();
 
-void CaptureCamera::setSharpness(int value)
-{
-    camera.set(CV_CAP_PROP_SHARPNESS, value/100.0f);
+    createExtrinsicMatrix();
+
+    computeAllDirections();
+
+    std::cout << "Vector to middle: " << m_directionVectorToCenter << std::endl;
+
+    contourColor = Scalar(0, 0, 255);
+
+    backgroundExtractor = new BackgroundSubtractorMOG(50, 10, 0.3, 0.4);
+    useBackgroundSub = varMap[useBackgroundSubstractorKey].toFloat();
+
+    m_QtWidgetViewer = new CamWidget;
+    CQtOpenCVViewerGl *t = m_QtWidgetViewer->getImageViewer();
+    connect(this, SIGNAL(imageRead(cv::Mat)), t, SLOT(showImage(cv::Mat)));
+    connect(m_QtWidgetViewer, SIGNAL(activeCam(bool)), this, SLOT(activeCam(bool)));
+    connect(m_QtWidgetViewer, SIGNAL(turnedOnCam(bool)), this, SLOT(turnedOnCam(bool)));
+    connect(m_QtWidgetViewer, SIGNAL(thresholdCam(size_t)), this, SLOT(thresholdCam(size_t)));
+
+    if(varMap[turnedOnKey].toBool())
+    {
+        TurnOn();
+    }
 }

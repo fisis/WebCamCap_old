@@ -73,11 +73,16 @@ void AddCamera::on_buttonBox_accepted()
                             ui->deviceUSB_ID->text().toInt(),
                             ui->zorny_uhol->text().toFloat(), ui->useBackgroundSub->isChecked());
 
-    //m_camera->resolution = vec2(ui->FrameCols->text().toInt(), ui->FrameRows->text().toInt());
 
+    if(!m_coefficients.empty())
+    {
+        m_camera->setDistortionCoeffs(m_coefficients);
+    }
 
-    //cam->setDistortionCoeffs(m_coefficient);
-    //cam->setCameraMatrix(m_cameraMatrix);
+    if(!m_cameraMatrix.empty())
+    {
+        m_camera->setCameraMatrix(m_cameraMatrix);
+    }
 
     if(m_tooHighValueWarning)
     {
@@ -149,7 +154,7 @@ void AddCamera::recording()
         QCoreApplication::processEvents();
 
         m_videoCaptureTemp >> m_frame;
-        m_mask = CaptureCamera::myColorThreshold(m_frame, getStructuringElement(MORPH_ELLIPSE, Size(2,2)), 220, 255);
+        m_mask = CaptureCamera::myColorThreshold(m_frame, 220, 255);
 
         for(int i = 0; i < m_frame.rows; i++)
         {
@@ -175,8 +180,6 @@ void AddCamera::recording()
         ui->glImage->showImage(m_frame);
 
         cv::waitKey(10);
-
-        m_tooHighValueWarning = false;
     }
 }
 
@@ -195,7 +198,7 @@ void AddCamera::readConfigFile(QString path)
     cv::FileStorage file(path.toStdString(), FileStorage::READ);
 
     file["camera_matrix"] >> m_cameraMatrix;
-    file["distortion_coefficients"] >> m_coefficient;
+    file["distortion_coefficients"] >> m_coefficients;
 }
 
 

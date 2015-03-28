@@ -23,7 +23,7 @@
 #include "frame.h"
 
 
-Frame::Frame(int elapsed, std::vector<Point> pts, std::vector<std::vector<Line> > lines)
+Frame::Frame(int elapsed, std::vector<Point> pts, QVector<QVector<Line> > lines)
 {
     m_points = pts;
     m_lines = lines;

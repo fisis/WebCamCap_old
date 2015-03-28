@@ -31,8 +31,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/opencv.hpp>
 
-#include <QHash>
-
 class CaptureCamera: public QObject
 {
     Q_OBJECT
@@ -44,7 +42,7 @@ class CaptureCamera: public QObject
     std::string m_name = "Camera";
     bool m_turnedOn = false;
     float m_fov;
-    size_t thresholdValue = 255;
+    size_t m_thresholdValue = 255;
 
 
     //width, length
@@ -59,7 +57,7 @@ class CaptureCamera: public QObject
 
     //widget
     bool m_showWindow = true;
-    CamWidget * m_QtWidgetViewer;
+    CamWidget * m_QtWidgetViewer = nullptr;
 
     //ADVANCED for camera
     cv::VideoCapture camera;
@@ -73,7 +71,7 @@ class CaptureCamera: public QObject
     cv::BackgroundSubtractorMOG* backgroundExtractor;
 
     //ADVANCED for image process
-    cv::Mat dilateKernel;
+    cv::Mat dilateKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3,3));
     cv::Scalar contourColor;
     std::vector <Contour> contours;
     cv::Moments centerMoment;
@@ -82,7 +80,7 @@ class CaptureCamera: public QObject
     std::vector<glm::vec2> centerOfContour;
 
     glm::vec3 directionTemp;
-    std::vector<Line> lines;
+    QVector<Line> lines;
 
     //all matrices
     cv::Mat m_projectionMatrix;
@@ -93,14 +91,15 @@ class CaptureCamera: public QObject
 
 public:
     //public parameters
-    glm::vec2 resolution = glm::vec2(0,0);
+    glm::vec2 m_resolution = glm::vec2(0,0);
 
     //public functions
-    CaptureCamera(glm::vec2 resolution, glm::vec3 pos, glm::vec3 m_roomDimensions, std::string m_name, int ID, float angle, bool backgroudSubstractor = false);
+    CaptureCamera();
+    CaptureCamera(glm::vec2 m_resolution, glm::vec3 pos, glm::vec3 m_roomDimensions, std::string m_name, int ID, float angle, bool backgroudSubstractor = false);
 
     ~CaptureCamera();
 
-    std::vector<Line> RecordNextFrame();
+    QVector<Line> RecordNextFrame();
     std::vector<glm::vec2> RecordNextFrame2D();
     void TurnOn();
     void TurnOff();
@@ -112,15 +111,8 @@ public:
     void setROI(cv::Mat roi){ROIMask = roi; ROI = true;}
 
     void setDimensions(glm::vec3 roomDim){m_roomDimensions = roomDim; ComputeDirVector();}
-    void setWidth(int  width){m_roomDimensions.x = width; ComputeDirVector();}
-    void setLength(int length){m_roomDimensions.y = length; ComputeDirVector();}
-    void setThreshold(size_t Threshold){thresholdValue = Threshold;}
+    void setThreshold(size_t Threshold){m_thresholdValue = Threshold;}
     void setAngle(float Angle){m_fov = Angle; m_anglePerPixel = 0;}
-
-    void setContrast(int value);
-    void setBrightness(int value);
-    void setSaturation(int value);
-    void setSharpness(int value);
 
     std::string getName() const {return m_name;}
     glm::vec3 getPosition() const {return m_globalPosition;}
@@ -130,8 +122,7 @@ public:
     bool getTurnedOn() const {return m_turnedOn;}
     CamWidget *getWidget() const {return m_QtWidgetViewer;}
 
-
-    static cv::Mat myColorThreshold(cv::Mat input, cv::Mat dilateKernel, int thresholdValue, int maxValue);
+    static cv::Mat myColorThreshold(cv::Mat input, int m_thresholdValue, int maxValue);
 
     cv::Mat distortionCoeffs() const;
     void setDistortionCoeffs(const cv::Mat &distortionCoeffs);
@@ -144,6 +135,9 @@ public:
 
     cv::Mat IntrinsicMatrix() const;
     void setIntrinsicMatrix(const cv::Mat &IntrinsicMatrix);
+
+    QVariantMap toVariantMap();
+    void fromVariantMap(QVariantMap varMap);
 
 public slots:
     void activeCam(bool active);

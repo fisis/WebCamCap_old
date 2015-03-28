@@ -52,7 +52,7 @@ AddProject::~AddProject()
 void AddProject::on_buttonBox_accepted()
 {
     newProject = new Room(nullptr, vec3(ui->width->text().toInt(), ui->length->text().toInt(), ui->height->text().toInt() ),
-                        ui->epsilon->text().toFloat(), ui->name->text().toStdString());
+                        ui->epsilon->text().toFloat(), ui->name->text());
 
     for(size_t i = 0; i < newCameras.size(); i++)
     {
@@ -78,13 +78,18 @@ void AddProject::EditProject(Room *Project)
     ui->height->setText(QString::number(dims.z));
 
     ui->epsilon->setText(QString::number(Project->getEpsilon()));
-    ui->name->setText(QString::fromStdString(Project->getName()));
+    ui->name->setText(Project->getName());
 
-    this->setWindowTitle(QString::fromStdString(Project->getName()));
+    this->setWindowTitle(Project->getName());
 }
 
 void AddProject::addCamToTable(CaptureCamera *temp)
 {
+    CaptureCamera* newCam = new CaptureCamera();
+    newCam->fromVariantMap(temp->toVariantMap());
+
+    newCameras.push_back(newCam);
+
     int row = ui->CameraTable->rowCount();
     ui->CameraTable->insertRow(row);
 

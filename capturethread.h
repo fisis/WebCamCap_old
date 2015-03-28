@@ -43,7 +43,7 @@ class worker : public QObject
     QMutex mutex;
     QWaitCondition *line;
 
-    std::vector<Line> result;
+    QVector<Line> result;
 
 public:
     explicit worker(QWaitCondition *q, CaptureCamera *cam,QObject *parent = 0);
@@ -51,7 +51,7 @@ public:
 
 signals:
     void finished();
-    void ResultReady(std::vector<Line> points2D);
+    void ResultReady(QVector<Line> points2D);
 
 public slots:
   void StopWork();
